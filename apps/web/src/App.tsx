@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { AlertTriangle, LogOut, RefreshCw } from 'lucide-react';
 import { useSession } from './store/session';
 import { useFriends } from './store/friends';
+import { useVoiceRooms } from './store/voiceRooms';
 import { useApp } from './store/app';
 import { useMessages } from './store/messages';
 import { useClaude } from './store/claude';
@@ -71,6 +72,7 @@ function resetStores() {
   useClaude.setState({ conversations: [], loaded: false, messages: {}, streaming: {} });
   useCompanion.setState({ loaded: false, settings: null, permissions: {}, tasks: [], questions: [], logs: [] });
   useFriends.setState({ loaded: false, rows: [], blocked: [] });
+  useVoiceRooms.getState().reset();
 }
 
 export default function App() {

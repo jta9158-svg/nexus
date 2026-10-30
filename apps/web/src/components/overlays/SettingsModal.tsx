@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Download, ImagePlus, LogOut, RefreshCw, Shield, Trash2 } from 'lucide-react';
 import { useApp } from '../../store/app';
 import { useSession } from '../../store/session';
-import { readDevicePrefs, saveDevicePref } from '../../store/call';
+import { readDevicePrefs, saveDevicePref, useCall } from '../../store/call';
 import { toast } from '../../store/toast';
 import { sb, currentConfig } from '../../lib/supabase';
 import { publicUrl, randomId } from '../../lib/storage';
@@ -221,8 +221,38 @@ function VoiceTab() {
           ))}
         </Select>
       </Field>
-      <p className="text-[12px] text-fg-3">Cancelamento de eco, supressão de ruído e controle de volume automático ficam sempre ativos nas calls.</p>
+      <NoiseToggle />
+      <p className="text-[12px] text-fg-3">Cancelamento de eco e controle automático de volume ficam sempre ativos nas calls.</p>
     </div>
+  );
+}
+
+function NoiseToggle() {
+  const noiseOn = useCall((s) => s.noiseOn);
+  const noiseState = useCall((s) => s.noiseState);
+  const inCall = useCall((s) => s.status === 'connected' || s.status === 'reconnecting');
+  const toggleNoise = useCall((s) => s.toggleNoise);
+  const status = !inCall
+    ? null
+    : noiseState === 'ligado'
+      ? 'Agora: ligado nesta call.'
+      : noiseState === 'carregando'
+        ? 'Agora: ligando…'
+        : noiseState === 'basico'
+          ? 'Agora: só o anti-ruído básico (o avançado não funciona neste aparelho).'
+          : 'Agora: desligado nesta call.';
+  return (
+    <Toggle
+      checked={noiseOn}
+      onChange={() => void toggleNoise()}
+      label="Anti-ruído"
+      description={
+        <>
+          Tira o barulho de fundo da sua voz nas calls (ventilador, teclado, rua, cachorro), como no Discord. Funciona no próprio aparelho e não grava nada.
+          {status ? <span className="block mt-1 text-fg-2">{status}</span> : null}
+        </>
+      }
+    />
   );
 }
 

@@ -30,6 +30,7 @@ import { useApp, displayNameFor } from '../../store/app';
 import { useClaudeVisible, useSession } from '../../store/session';
 import { useCall } from '../../store/call';
 import { useFriends } from '../../store/friends';
+import { useVoiceRooms, useVoiceRoomsSync } from '../../store/voiceRooms';
 import { toast } from '../../store/toast';
 import { sb } from '../../lib/supabase';
 import { hasPerm } from '../../lib/permissions';
@@ -181,6 +182,17 @@ function VoiceStatusBar() {
 // ---------------------------------------------------------------------
 // Barra lateral de um servidor
 // ---------------------------------------------------------------------
+interface VoiceRow {
+  id: string;
+  name: string;
+  avatar: string | null;
+  agent: boolean;
+  speaking: boolean;
+  muted: boolean;
+  deafened: boolean;
+  screen: boolean;
+}
+
 function voiceParticipants(presence: Record<string, PresenceState> | undefined, channelId: string): PresenceState[] {
   if (!presence) return [];
   return Object.values(presence).filter((p) => p.voice?.channel_id === channelId);
@@ -228,6 +240,9 @@ export function ServerSidebar({ serverId }: { serverId: string }) {
   const [hint, setHint] = useState<DropHint | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   useClickOutside(menuRef, () => setMenu(false), menu);
+  const claudeVisible = useClaudeVisible();
+  const lkRooms = useVoiceRooms((s) => s.byServer[serverId]);
+  useVoiceRoomsSync(serverId, channels.some((c) => c.kind === 'voice'));
 
   if (!server) return null;
   const canManageChannels = hasPerm(perms, 'manage_channels');
@@ -338,6 +353,36 @@ export function ServerSidebar({ serverId }: { serverId: string }) {
 
   const isActive = (kind: string) => view.kind === kind && 'serverId' in view && view.serverId === serverId;
 
+  // Quem está em cada canal de voz: na call em que você está, a lista da própria call
+  // (com quem está falando); nos outros canais, presença em tempo real + LiveKit.
+  const myCallChannel = call.status === 'connected' || call.status === 'reconnecting' ? call.channelId : null;
+  const voiceRows = (channelId: string): VoiceRow[] => {
+    const rows = new Map<string, VoiceRow>();
+    const fromPresence = new Map(voiceParticipants(presence, channelId).map((p) => [p.user_id, p]));
+    const add = (id: string, agent: boolean, extra: { name?: string; speaking?: boolean; muted?: boolean; screen?: boolean }) => {
+      if (!id || rows.has(id) || (agent && !claudeVisible)) return;
+      const pr = fromPresence.get(id);
+      const known = displayNameFor(id, serverId);
+      rows.set(id, {
+        id,
+        agent,
+        name: agent ? 'NEXUS IA' : known !== 'Carregando…' ? known : extra.name || 'Participante',
+        avatar: profiles[id]?.avatar_url ?? null,
+        speaking: extra.speaking ?? false,
+        muted: extra.muted ?? pr?.voice?.muted ?? false,
+        deafened: pr?.voice?.deafened ?? false,
+        screen: extra.screen ?? pr?.voice?.screen ?? false,
+      });
+    };
+    if (myCallChannel === channelId) {
+      for (const p of call.participants) add(p.identity, p.isAgent, { name: p.name, speaking: p.speaking, muted: !p.isAgent && !p.micOn, screen: p.screenOn });
+      return Array.from(rows.values());
+    }
+    for (const p of fromPresence.values()) add(p.user_id, false, {});
+    for (const p of lkRooms?.[channelId] ?? []) add(p.identity, p.agent, { name: p.name });
+    return Array.from(rows.values());
+  };
+
   const renderChannel = (c: Channel, list: Channel[], groupCat: string | null) => {
     const line = hint?.id === c.id && drag?.type === 'channel' && drag.id !== c.id ? hint.where : null;
     const editButton = canManageChannels ? (
@@ -373,7 +418,7 @@ export function ServerSidebar({ serverId }: { serverId: string }) {
         </div>
       );
     }
-    const people = voiceParticipants(presence, c.id);
+    const people = voiceRows(c.id);
     const active = view.kind === 'call' && view.channelId === c.id;
     return (
       <div key={c.id} {...channelDnd(c, list, groupCat)} className={cx('relative', drag?.id === c.id && 'opacity-40')}>
@@ -398,14 +443,14 @@ export function ServerSidebar({ serverId }: { serverId: string }) {
           }
         />
         {people.length ? (
-          <div className="pl-9 pr-2 pb-1 space-y-0.5">
+          <div className="pl-9 pr-2 pb-1 space-y-0.5" aria-label={`Na call ${c.name}`}>
             {people.map((p) => (
-              <div key={p.user_id} className="flex items-center gap-2 h-7 text-[13px] text-fg-2">
-                <Avatar name={profiles[p.user_id]?.display_name ?? '?'} url={profiles[p.user_id]?.avatar_url} size={22} />
-                <span className="truncate flex-1">{displayNameFor(p.user_id, serverId)}</span>
-                {p.voice?.screen ? <span className="text-[10px] font-bold text-white bg-danger rounded px-1">AO VIVO</span> : null}
-                {p.voice?.muted ? <MicOff className="size-3.5 text-fg-3" /> : null}
-                {p.voice?.deafened ? <HeadphoneOff className="size-3.5 text-fg-3" /> : null}
+              <div key={p.id} className="flex items-center gap-2 h-7 text-[13px] text-fg-2">
+                {p.agent ? <ClaudeAvatar size={22} /> : <Avatar name={p.name} url={p.avatar} size={22} speaking={p.speaking} />}
+                <span className={cx('truncate flex-1', p.speaking && 'text-fg')}>{p.name}</span>
+                {p.screen ? <span className="text-[10px] font-bold text-white bg-danger rounded px-1">AO VIVO</span> : null}
+                {p.muted ? <MicOff className="size-3.5 text-fg-3" aria-label="Microfone desligado" /> : null}
+                {p.deafened ? <HeadphoneOff className="size-3.5 text-fg-3" aria-label="Sem som" /> : null}
               </div>
             ))}
           </div>

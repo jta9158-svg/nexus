@@ -222,6 +222,9 @@ async function mockSupabase(page, opts = { admin: true }) {
       body = single ? data[0] ?? null : data;
     } else if (url.pathname.startsWith('/auth/v1/user')) {
       body = session.user;
+    } else if (url.pathname === '/functions/v1/livekit-token' && (req.postDataJSON() ?? {}).action === 'participants') {
+      // Quem está nas calls segundo a LiveKit (sem presença em tempo real no teste)
+      body = { channels: { [channels[6].id]: [{ identity: MAR, name: 'Marina', agent: false }, { identity: 'agent-AJ_teste', name: 'NEXUS IA', agent: true }] } };
     } else {
       body = {};
     }
@@ -261,6 +264,9 @@ for (const s of shots) {
   if (name === 'desktop-chat') {
     // Outras telas no desktop
     // A IA não aparece dentro dos servidores (só no Início, para o administrador)
+    const voiceList = page.getByLabel('Na call Geral').first();
+    const inCallText = (await voiceList.count()) ? await voiceList.innerText() : '';
+    console.log(`call: embaixo do canal de voz aparece ${/Marina/.test(inCallText) ? 'Marina' : 'NINGUÉM (erro)'}${/NEXUS IA/.test(inCallText) ? ' + NEXUS IA (só o administrador vê)' : ''}`);
     const iaInServer = await page.locator('nav, aside, div').getByRole('button', { name: /^NEXUS IA$|^NEXUS Companion$/ }).count();
     console.log(`servidor: NEXUS IA na barra do servidor ${iaInServer ? 'VISÍVEL (erro)' : 'escondida'}`);
     for (const [label, click] of [
@@ -377,6 +383,9 @@ for (const s of shots) {
   await page.waitForTimeout(2500);
   await page.screenshot({ path: join(out, 'desktop-membro.png') });
   // (uma resposta antiga da IA no canal continua visível; o que some são os acessos à IA)
+  const memberVoice = page.getByLabel('Na call Geral').first();
+  const memberVoiceText = (await memberVoice.count()) ? await memberVoice.innerText() : '';
+  console.log(`call (pessoa comum): ${/Marina/.test(memberVoiceText) ? 'vê a Marina na call' : 'NÃO vê quem está na call (erro)'} · IA na lista ${/NEXUS IA/.test(memberVoiceText) ? 'VISÍVEL (erro)' : 'escondida'}`);
   const claudeItems = await page.getByRole('button', { name: /^NEXUS IA$|^NEXUS Companion$|Perguntar à NEXUS IA|Chamar a NEXUS IA/ }).count();
   const services = await page.getByText(/Faturamento Roblox|^Serviços$/).count();
   console.log(`desktop-membro: ${errors.length ? 'ERROS: ' + errors.join(' | ') : 'ok'} · IA ${claudeItems ? 'VISÍVEL (erro)' : 'escondida'} · Serviços ${services ? 'VISÍVEIS (erro)' : 'escondidos (servidor que não é de jogos)'}`);

@@ -29,6 +29,8 @@ Para uma equipe de até ~20 pessoas usando todo dia, o **Free** costuma bastar (
 | Pessoas conectadas ao mesmo tempo | 100 | 1.000 |
 | Minutos de agente de voz (Companion) | 1.000/mês | 5.000/mês (+US$ 0,01/min) |
 
+**Anti-ruído (Krisp):** incluído em todos os planos, inclusive o Build gratuito, sem custo por minuto (“Background noise suppression … Krisp NC: Yes” na tabela de preços). Roda no aparelho de quem fala; o pacote (~6 MB, ~2 MB compactado) é baixado só na primeira call. O “isolamento de voz” (outro modelo, que também tira vozes de fundo) tem só 100 min/mês no Build — o NEXUS **não** usa esse.
+
 Conta de minutos = pessoas × minutos. Ex.: 5 pessoas por 2 h/dia → 5 × 120 × 30 = **18.000 min/mês** → passa do Build; cabe no Ship. Com calls ocasionais (≈ 8 h/mês de call com 5 pessoas) o Build gratuito basta. Alternativa: hospedar o LiveKit (código aberto) num servidor próprio (~US$ 5–20/mês), com mais trabalho de manutenção.
 
 ### Claude (API da Anthropic) — <https://platform.claude.com/docs/en/about-claude/pricing>

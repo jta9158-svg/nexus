@@ -61,6 +61,63 @@ export async function livekitAdminToken(key: string, secret: string, room: strin
   );
 }
 
+export interface VoicePeer {
+  identity: string;
+  name: string;
+  agent: boolean;
+}
+
+/**
+ * Quem está em cada canal de voz agora, direto da LiveKit (a fonte da verdade
+ * das calls). Devolve { [channelId]: pessoas }, só com as salas que têm alguém.
+ */
+export async function listVoicePeers(opts: {
+  url: string;
+  key: string;
+  secret: string;
+  channelIds: string[];
+  fetchImpl?: typeof fetch;
+}): Promise<Record<string, VoicePeer[]>> {
+  const names = opts.channelIds.map((id) => `nexus-${id}`);
+  if (!names.length) return {};
+  const doFetch = opts.fetchImpl ?? fetch;
+  const base = livekitHttpUrl(opts.url);
+  // deno-lint-ignore no-explicit-any
+  const call = async (method: string, body: Record<string, unknown>, room: string): Promise<any> => {
+    const token = await livekitAdminToken(opts.key, opts.secret, room, 60);
+    const res = await doFetch(`${base}/twirp/livekit.RoomService/${method}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(body),
+    });
+    const text = await res.text();
+    if (!res.ok) throw new Error(`LiveKit ${method} ${res.status}: ${text.slice(0, 120)}`);
+    return text ? JSON.parse(text) : {};
+  };
+  const listed = await call('ListRooms', { names }, '');
+  const out: Record<string, VoicePeer[]> = {};
+  // deno-lint-ignore no-explicit-any
+  const rooms = ((listed.rooms ?? []) as any[]).filter((r) => typeof r?.name === 'string' && names.includes(r.name));
+  await Promise.all(
+    rooms.map(async (r) => {
+      const room = r.name as string;
+      const { participants = [] } = await call('ListParticipants', { room }, room);
+      const peers: VoicePeer[] = [];
+      // deno-lint-ignore no-explicit-any
+      for (const p of participants as any[]) {
+        if (p.state === 'DISCONNECTED' || p.state === 3) continue;
+        // Gravação/transmissão não é gente na call
+        if (p.kind === 'EGRESS' || p.kind === 2 || p.kind === 'INGRESS' || p.kind === 1) continue;
+        const identity = String(p.identity ?? '');
+        if (!identity) continue;
+        peers.push({ identity, name: String(p.name ?? ''), agent: p.kind === 'AGENT' || p.kind === 4 || identity.startsWith('agent-') });
+      }
+      if (peers.length) out[room.slice('nexus-'.length)] = peers;
+    }),
+  );
+  return out;
+}
+
 export interface VoiceTurn {
   role: 'user' | 'assistant';
   speaker?: string;

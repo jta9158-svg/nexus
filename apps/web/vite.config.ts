@@ -7,7 +7,9 @@ import { VitePWA } from 'vite-plugin-pwa';
 // do Vite precisa de scripts inline).
 const CSP = [
   "default-src 'self'",
-  "script-src 'self'",
+  // blob: e 'wasm-unsafe-eval': o anti-ruído (Krisp) roda num AudioWorklet criado
+  // pelo próprio app e usa WebAssembly. Nada de scripts de outros sites.
+  "script-src 'self' blob: 'wasm-unsafe-eval'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "media-src 'self' blob: mediastream: https:",
@@ -67,10 +69,18 @@ export default defineConfig({
       workbox: {
         navigateFallback: 'index.html',
         globPatterns: ['**/*.{js,css,html,svg,png,woff2,ico,webmanifest}'],
+        // O anti-ruído (~6 MB) não entra na instalação: baixa só na primeira call e fica guardado.
+        globIgnores: ['**/krisp-*.js'],
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
         cleanupOutdatedCaches: true,
         // Nada de API em cache: mensagens, Claude e chamadas sempre pela rede.
-        runtimeCaching: [],
+        runtimeCaching: [
+          {
+            urlPattern: /\/assets\/krisp-[^/]+\.js$/,
+            handler: 'CacheFirst',
+            options: { cacheName: 'nexus-anti-ruido', expiration: { maxEntries: 2 } },
+          },
+        ],
       },
     }),
   ],

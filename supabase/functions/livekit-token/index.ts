@@ -2,22 +2,36 @@
 // POST { channel_id }  → { url, token, room }
 // Confere no banco se a pessoa pode entrar no canal de voz e o que pode publicar
 // (microfone, câmera, tela) conforme os cargos dela.
+// POST { action: 'participants', server_id } → { channels: { [channelId]: pessoas } }
+// Quem está agora em cada canal de voz do servidor (direto da LiveKit), só dos
+// canais que a pessoa consegue ver.
 import { env, handleError, HttpError, json, preflight, readJson } from '../_shared/http.ts';
-import { adminClient, requireUser, rpc } from '../_shared/supabase.ts';
+import { adminClient, requireUser, rpc, userClient } from '../_shared/supabase.ts';
 import { signJwt } from '../_shared/jwt.ts';
+import { listVoicePeers } from '../_shared/voice.ts';
 
 Deno.serve(async (req) => {
   const pre = preflight(req);
   if (pre) return pre;
   try {
-    const { user } = await requireUser(req);
-    const { channel_id } = await readJson<{ channel_id: string }>(req);
+    const { user, token: userToken } = await requireUser(req);
+    const { channel_id, action, server_id } = await readJson<{ channel_id?: string; action?: string; server_id?: string }>(req);
     const url = env('LIVEKIT_URL');
     const key = env('LIVEKIT_API_KEY');
     const secret = env('LIVEKIT_API_SECRET');
     if (!url || !key || !secret) {
       throw new HttpError(503, 'As calls ainda não foram configuradas no servidor (faltam LIVEKIT_URL, LIVEKIT_API_KEY e LIVEKIT_API_SECRET — veja docs/CONFIGURACAO.md).');
     }
+
+    if (action === 'participants') {
+      if (!server_id) throw new HttpError(400, 'Servidor não informado.');
+      // Só os canais de voz que a pessoa enxerga: a consulta usa as regras de acesso dela
+      const { data: chans, error } = await userClient(userToken).from('channels').select('id').eq('server_id', server_id).eq('kind', 'voice');
+      if (error) throw new HttpError(500, 'Não foi possível ler os canais de voz.');
+      const channels = await listVoicePeers({ url, key, secret, channelIds: (chans ?? []).map((c: { id: string }) => c.id) });
+      return json({ channels });
+    }
+
     if (!channel_id) throw new HttpError(400, 'Canal não informado.');
 
     const admin = adminClient();

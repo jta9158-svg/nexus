@@ -38,6 +38,19 @@ function setConnected(ok: boolean) {
   connectionListeners.forEach((fn) => fn(ok));
 }
 
+/**
+ * A mesma pessoa pode estar com o NEXUS aberto em vários aparelhos (PC e celular).
+ * Junta tudo: aparece na call se QUALQUER aparelho estiver na call, e online se
+ * qualquer um estiver online.
+ */
+export function mergeDevices(metas: PresenceState[]): PresenceState {
+  const sorted = [...metas].sort((a, b) => (b.at ?? 0) - (a.at ?? 0));
+  const latest = sorted[0];
+  const inCall = sorted.find((m) => m.voice);
+  const online = sorted.find((m) => m.status === 'online');
+  return { ...latest, status: online ? 'online' : latest.status, voice: inCall?.voice ?? null, device: (inCall ?? online ?? latest).device };
+}
+
 function myState(serverId: string): PresenceState {
   return {
     user_id: me!,
@@ -155,8 +168,7 @@ function subscribeServer(serverId: string) {
       const raw = ch.presenceState<PresenceState>();
       const map: Record<string, PresenceState> = {};
       for (const [key, metas] of Object.entries(raw)) {
-        const latest = [...metas].sort((a, b) => (b.at ?? 0) - (a.at ?? 0))[0];
-        if (latest) map[key] = latest as unknown as PresenceState;
+        map[key] = mergeDevices(metas as unknown as PresenceState[]);
       }
       useApp.getState().setPresence(serverId, map);
     })
@@ -332,7 +344,12 @@ function retrackAll() {
 /** Informa a todos do servidor em qual call você está (ou que saiu). */
 export function setVoicePresence(serverId: string | null, state: VoiceState | null): void {
   const previous = voice?.serverId ?? null;
-  voice = serverId && state ? { serverId, state } : null;
+  const next = serverId && state ? { serverId, state } : null;
+  // Só avisa quando algo muda de verdade (entrar/sair, microfone, som, câmera, tela).
+  // Antes isso era enviado a cada vez que alguém falava, o que podia estourar o
+  // limite de mensagens do tempo real e derrubar a lista de quem está na call.
+  if (JSON.stringify(next) === JSON.stringify(voice)) return;
+  voice = next;
   for (const id of new Set([previous, serverId])) {
     if (!id) continue;
     const ch = serverPresence.get(id);

@@ -22,6 +22,7 @@ import { setVoicePresence } from '../lib/realtime';
 import { playPing } from '../lib/notify';
 import { friendlyError } from '../lib/errors';
 import { hasPerm } from '../lib/permissions';
+import { applyNoiseFilter, readNoisePref, saveNoisePref, type NoiseState } from '../lib/noise';
 import { toast } from './toast';
 import { useApp } from './app';
 
@@ -94,6 +95,9 @@ interface CallState {
   volumes: Record<string, number>;
   claudeBusy: boolean;
   version: number;
+  /** Anti-ruído (Krisp) escolhido pela pessoa e a situação real dele na call. */
+  noiseOn: boolean;
+  noiseState: NoiseState;
   join: (serverId: string, channelId: string) => Promise<void>;
   leave: () => Promise<void>;
   toggleMic: () => Promise<void>;
@@ -101,6 +105,7 @@ interface CallState {
   toggleScreen: () => Promise<void>;
   setScreenQuality: (q: ScreenQuality) => Promise<void>;
   toggleDeafen: () => void;
+  toggleNoise: () => Promise<void>;
   setVolume: (identity: string, volume: number) => void;
   unlockAudio: () => Promise<void>;
   inviteClaude: () => Promise<void>;
@@ -221,6 +226,14 @@ export const useCall = create<CallState>((set, get) => {
     publishPresence();
   };
 
+  // Liga/desliga o anti-ruído no microfone atual (também depois de reconectar ou trocar de microfone).
+  const applyNoise = async () => {
+    const room = get().room;
+    if (!room) return;
+    const state = await applyNoiseFilter(room, get().noiseOn).catch(() => 'basico' as NoiseState);
+    if (get().room === room) set({ noiseState: state });
+  };
+
   const publishPresence = () => {
     const { serverId, channelId, status } = get();
     if (!serverId || !channelId || (status !== 'connected' && status !== 'reconnecting')) return;
@@ -250,12 +263,14 @@ export const useCall = create<CallState>((set, get) => {
     volumes: {},
     claudeBusy: false,
     version: 0,
+    noiseOn: readNoisePref(),
+    noiseState: 'desligado',
 
     join: async (serverId, channelId) => {
       const cur = get();
       if (cur.channelId === channelId && (cur.status === 'connected' || cur.status === 'connecting')) return;
       if (cur.room) await get().leave();
-      set({ status: 'connecting', error: null, serverId, channelId, participants: [], deafened: false, volumes: {} });
+      set({ status: 'connecting', error: null, serverId, channelId, participants: [], deafened: false, volumes: {}, noiseState: get().noiseOn ? 'carregando' : 'desligado' });
       try {
         const { token, url } = await callFunction<{ token: string; url: string; room: string }>('livekit-token', { channel_id: channelId });
         const prefs = readDevicePrefs();
@@ -304,7 +319,10 @@ export const useCall = create<CallState>((set, get) => {
           })
           .on(RoomEvent.TrackMuted, sync)
           .on(RoomEvent.TrackUnmuted, sync)
-          .on(RoomEvent.LocalTrackPublished, sync)
+          .on(RoomEvent.LocalTrackPublished, (pub) => {
+            sync();
+            if (pub.source === Track.Source.Microphone) void applyNoise();
+          })
           .on(RoomEvent.LocalTrackUnpublished, sync)
           .on(RoomEvent.ActiveSpeakersChanged, sync)
           .on(RoomEvent.ConnectionQualityChanged, sync)
@@ -314,6 +332,7 @@ export const useCall = create<CallState>((set, get) => {
           .on(RoomEvent.Reconnected, () => {
             set({ status: 'connected' });
             sync();
+            void applyNoise();
           })
           .on(RoomEvent.MediaDevicesError, (e: Error) => toast.warn('Problema com microfone ou câmera', friendlyError(e)))
           .on(RoomEvent.Disconnected, (reason?: DisconnectReason) => {
@@ -329,7 +348,7 @@ export const useCall = create<CallState>((set, get) => {
                   : reason === DisconnectReason.CLIENT_INITIATED
                     ? null
                     : 'A conexão com a call caiu.';
-            set({ status: msg ? 'error' : 'idle', error: msg, room: null, participants: [], serverId: msg ? serverId : null, channelId: msg ? channelId : null });
+            set({ status: msg ? 'error' : 'idle', error: msg, room: null, participants: [], noiseState: 'desligado', serverId: msg ? serverId : null, channelId: msg ? channelId : null });
           });
 
         await room.connect(url, token);
@@ -339,6 +358,7 @@ export const useCall = create<CallState>((set, get) => {
         if (hasPerm(permsFor(serverId), 'speak')) {
           try {
             await room.localParticipant.setMicrophoneEnabled(true);
+            void applyNoise();
           } catch (err) {
             toast.warn('Microfone indisponível', 'Permita o acesso ao microfone para falar. ' + friendlyError(err));
           }
@@ -361,7 +381,7 @@ export const useCall = create<CallState>((set, get) => {
       setVoicePresence(null, null);
       if (room && room.state !== ConnectionState.Disconnected) await room.disconnect(true).catch(() => undefined);
       if (room) playPing('leave');
-      set({ status: 'idle', error: null, serverId: null, channelId: null, participants: [], micOn: false, camOn: false, screenOn: false, deafened: false });
+      set({ status: 'idle', error: null, serverId: null, channelId: null, participants: [], micOn: false, camOn: false, screenOn: false, deafened: false, noiseState: 'desligado' });
     },
 
     toggleMic: async () => {
@@ -443,6 +463,18 @@ export const useCall = create<CallState>((set, get) => {
       } else {
         publishPresence();
       }
+    },
+
+    toggleNoise: async () => {
+      const on = !get().noiseOn;
+      saveNoisePref(on);
+      set({ noiseOn: on, noiseState: on && get().room ? 'carregando' : 'desligado' });
+      await applyNoise();
+      const st = get().noiseState;
+      if (!get().room) toast.info(on ? 'Anti-ruído ligado' : 'Anti-ruído desligado', 'Vale para as próximas calls.');
+      else if (st === 'ligado') toast.success('Anti-ruído ligado', 'Barulho de fundo removido da sua voz.');
+      else if (st === 'basico') toast.warn('Anti-ruído avançado indisponível neste aparelho', 'Ficou o anti-ruído básico do navegador.');
+      else if (st === 'desligado') toast.info('Anti-ruído desligado');
     },
 
     setVolume: (identity, volume) => {

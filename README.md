@@ -4,7 +4,7 @@ Central da equipe do **ALPHA — Templo da Magia** (e de outros jogos): chat e c
 
 Funciona no **Windows** (app instalável), no **navegador** e como app no **iPhone, iPad e Android**.
 
-## O que já está pronto (versão 0.1.7)
+## O que já está pronto (versão 0.1.8)
 
 | Área | Situação |
 |---|---|
@@ -17,7 +17,7 @@ Funciona no **Windows** (app instalável), no **navegador** e como app no **iPho
 | Regras de acesso | ✅ **217 testes passando** (`docs/TESTES.md`) |
 | NEXUS IA (feita com o Claude) só para o administrador | ✅ na interface o assistente se chama **NEXUS IA** (@NEXUS no canal; “NEXUS IA” na call). Só o administrador vê e usa, e só no Início (não aparece dentro dos servidores); o servidor também bloqueia |
 | Chat em tempo real, menções, anexos, busca, não lidas, DMs e grupos | ✅ implementado — falta testar no servidor real |
-| Calls de voz, vídeo e compartilhamento de tela | ✅ no ar (LiveKit Cloud), com qualidade de tela ajustável, volume por pessoa e tela cheia |
+| Calls de voz, vídeo e compartilhamento de tela | ✅ no ar (LiveKit Cloud), com qualidade de tela ajustável, volume por pessoa e tela cheia. Quem está em cada canal de voz aparece embaixo do canal, como no Discord (presença em tempo real + lista da própria LiveKit), com quem está falando destacado. **Anti-ruído** (modelo Krisp da LiveKit, incluído no plano gratuito) ligado por padrão, com botão na call e em Configurações → Voz e vídeo |
 | Claude AI (chat com histórico, imagens, PDF, scripts, contexto do projeto) | ✅ implementado; chave da API configurada — falta **crédito** na conta da API (créditos do Max, `docs/CONFIGURACAO.md` passo 2) |
 | @Claude nos canais | ✅ implementado — falta crédito na conta da API |
 | Claude Companion: modos, tarefas em segundo plano, dúvidas, permissões, histórico | ✅ implementado (executor no servidor); regras testadas no banco — falta crédito na conta da API |

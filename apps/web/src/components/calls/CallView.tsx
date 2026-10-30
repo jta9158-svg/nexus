@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ConnectionQuality, Track } from 'livekit-client';
 import {
+  AudioLines,
   Bot,
   BotOff,
   ChevronUp,
@@ -26,6 +27,7 @@ import {
 import { useApp, displayNameFor } from '../../store/app';
 import { useClaudeVisible, useSession } from '../../store/session';
 import { SCREEN_QUALITIES, useCall, type CallParticipant } from '../../store/call';
+import { useVoiceRooms, useVoiceRoomsSync } from '../../store/voiceRooms';
 import { canShareScreen, desktop, isIOS } from '../../lib/platform';
 import type { DesktopScreenSource } from '../../types/desktop';
 import { Avatar, Button, ClaudeAvatar, cx, EmptyState, Modal, Notice } from '../ui';
@@ -33,19 +35,29 @@ import { ViewHeader } from '../layout/ViewHeader';
 
 function VideoTrack({ identity, source, mirror }: { identity: string; source: Track.Source; mirror?: boolean }) {
   const ref = useRef<HTMLVideoElement>(null);
+  const attached = useRef<Track | null>(null);
   const room = useCall((s) => s.room);
   const version = useCall((s) => s.version);
+  // Só reconecta o vídeo quando a trilha muda de verdade (antes isso acontecia a
+  // cada vez que alguém falava, o que fazia o vídeo piscar e gastava processador).
   useEffect(() => {
     const el = ref.current;
     if (!room || !el) return;
     const p = room.localParticipant.identity === identity ? room.localParticipant : room.remoteParticipants.get(identity);
-    const track = p?.getTrackPublication(source)?.track;
-    if (!track) return;
-    track.attach(el);
-    return () => {
-      track.detach(el);
-    };
+    const track = p?.getTrackPublication(source)?.track ?? null;
+    if (attached.current === track) return;
+    attached.current?.detach(el);
+    attached.current = track;
+    track?.attach(el);
   }, [room, identity, source, version]);
+  useEffect(
+    () => () => {
+      const el = ref.current;
+      if (el) attached.current?.detach(el);
+      attached.current = null;
+    },
+    [],
+  );
   return <video ref={ref} className={cx('size-full object-contain bg-black', mirror && '-scale-x-100')} autoPlay playsInline muted />;
 }
 
@@ -293,10 +305,15 @@ export function CallView({ serverId, channelId }: { serverId: string; channelId:
   const [qualityMenu, setQualityMenu] = useState(false);
   const inThis = call.channelId === channelId && (call.status === 'connected' || call.status === 'reconnecting');
   const connecting = call.channelId === channelId && call.status === 'connecting';
+  const lkPeers = useVoiceRooms((s) => s.byServer[serverId]?.[channelId]);
+  useVoiceRoomsSync(serverId, !inThis);
 
   if (!channel) return <EmptyState title="Canal de voz não encontrado" className="flex-1" />;
 
-  const waiting = Object.values(presence ?? {}).filter((p) => p.voice?.channel_id === channelId);
+  // Quem já está na call (presença em tempo real + lista da LiveKit), antes de você entrar
+  const waitingIds = new Set(Object.values(presence ?? {}).filter((p) => p.voice?.channel_id === channelId).map((p) => p.user_id));
+  for (const p of lkPeers ?? []) if (!p.agent) waitingIds.add(p.identity);
+  const waiting = Array.from(waitingIds).map((user_id) => ({ user_id }));
   const people = inThis ? call.participants : [];
   const screens = people.filter((p) => p.screenOn);
   const agent = people.find((p) => p.isAgent);
@@ -381,6 +398,21 @@ export function CallView({ serverId, channelId }: { serverId: string; channelId:
           <div className="flex items-center justify-center gap-2 sm:gap-3">
             <ControlButton label={call.micOn ? 'Silenciar' : 'Ativar microfone'} active={call.micOn} danger={!call.micOn} onClick={() => void call.toggleMic()}>
               {call.micOn ? <Mic className="size-5" /> : <MicOff className="size-5" />}
+            </ControlButton>
+            <ControlButton
+              label={
+                !call.noiseOn
+                  ? 'Anti-ruído desligado (toque para ligar)'
+                  : call.noiseState === 'ligado'
+                    ? 'Anti-ruído ligado: barulho de fundo removido (toque para desligar)'
+                    : call.noiseState === 'carregando'
+                      ? 'Ligando o anti-ruído…'
+                      : 'Anti-ruído básico do navegador (o avançado não funciona neste aparelho)'
+              }
+              active={call.noiseOn}
+              onClick={() => void call.toggleNoise()}
+            >
+              {call.noiseState === 'carregando' ? <Loader2 className="size-5 animate-spin" /> : <AudioLines className="size-5" />}
             </ControlButton>
             <ControlButton label={call.deafened ? 'Ativar áudio' : 'Desativar áudio'} active={!call.deafened} danger={call.deafened} onClick={() => call.toggleDeafen()}>
               {call.deafened ? <HeadphoneOff className="size-5" /> : <Headphones className="size-5" />}
