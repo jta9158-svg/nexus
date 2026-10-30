@@ -76,7 +76,9 @@ function friendly(status: number, body: string): string {
   if (status === 403 || type === 'permission_error') return 'A chave da API da Anthropic não tem permissão para este modelo.';
   if (status === 429 || type === 'rate_limit_error') return 'Limite de uso da API da Anthropic atingido. Tente de novo em instantes.';
   if (status === 529 || type === 'overloaded_error') return 'O Claude está sobrecarregado agora. Tente de novo em alguns segundos.';
-  if (/credit balance/i.test(message)) return 'Os créditos da conta da API da Anthropic acabaram. Recarregue no Console da Anthropic.';
+  if (/credit balance/i.test(message)) {
+    return 'A conta da API do Claude está sem créditos. O administrador do NEXUS precisa vincular os créditos do plano Max (claude.ai → Configurações → Cobrança → créditos da API) ou adicionar créditos no Console da Anthropic.';
+  }
   if (status === 413) return 'O pedido ficou grande demais (anexos ou histórico). Tente com menos arquivos.';
   return `A API da Anthropic recusou o pedido (${status}${message ? `: ${message}` : ''}).`;
 }

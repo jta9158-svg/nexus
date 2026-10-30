@@ -3,6 +3,8 @@
 // Sem elas, o app mostra a tela de configuração para o dono informar o
 // endereço do próprio backend (fica salvo só neste aparelho).
 
+import { version as PKG_VERSION } from '../package.json';
+
 export interface NexusConfig {
   supabaseUrl: string;
   supabaseAnonKey: string;
@@ -13,7 +15,8 @@ export interface NexusConfig {
 
 const LOCAL_KEY = 'nexus.serverConfig.v1';
 
-export const APP_VERSION: string = import.meta.env.VITE_APP_VERSION || '0.1.0';
+// Versão mostrada no app: a do lançamento (definida no CI) ou, se não houver, a do package.json.
+export const APP_VERSION: string = import.meta.env.VITE_APP_VERSION || PKG_VERSION;
 
 function decodeJwtRole(key: string): string | null {
   const parts = key.split('.');

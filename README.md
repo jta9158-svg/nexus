@@ -4,18 +4,18 @@ Central da equipe do **ALPHA — Templo da Magia** (e de outros jogos): chat e c
 
 Funciona no **Windows** (app instalável), no **navegador** e como app no **iPhone, iPad e Android**.
 
-## O que já está pronto (versão 0.1.0)
+## O que já está pronto (versão 0.1.1)
 
 | Área | Situação |
 |---|---|
 | Interface (PC, tablet e celular) | ✅ pronta, igual ao layout de referência; testada em 1536 px, iPad, iPhone e Android |
-| Login, cadastro, recuperação de senha | ✅ implementado (Supabase Auth) — falta testar no servidor real |
+| Login, cadastro, recuperação de senha | ✅ no ar — cadastro e login testados no servidor real; a recuperação de senha precisa de um SMTP próprio |
 | Servidores, canais, cargos e permissões, convites, banimento | ✅ implementado; **131 testes de acesso passando** (`docs/TESTES.md`) |
 | Chat em tempo real, menções, anexos, busca, não lidas, DMs e grupos | ✅ implementado — falta testar no servidor real |
 | Calls de voz, vídeo e compartilhamento de tela | ✅ no ar (LiveKit Cloud), com qualidade de tela ajustável, volume por pessoa e tela cheia |
-| Claude AI (chat com histórico, imagens, PDF, scripts, contexto do projeto) | ✅ implementado; cliente da API testado — falta a chave da API |
-| @Claude nos canais | ✅ implementado — falta a chave da API |
-| Claude Companion: modos, tarefas em segundo plano, dúvidas, permissões, histórico | ✅ implementado (executor no servidor); regras testadas no banco — falta a chave da API |
+| Claude AI (chat com histórico, imagens, PDF, scripts, contexto do projeto) | ✅ implementado; chave da API configurada — falta **crédito** na conta da API (créditos do Max, `docs/CONFIGURACAO.md` passo 2) |
+| @Claude nos canais | ✅ implementado — falta crédito na conta da API |
+| Claude Companion: modos, tarefas em segundo plano, dúvidas, permissões, histórico | ✅ implementado (executor no servidor); regras testadas no banco — falta crédito na conta da API |
 | Claude Companion **por voz nas calls** | ✅ agente publicado na LiveKit Cloud (`apps/voice-agent`): chamar, pausar escuta, silenciar, tirar; responde quando chamam “Claude” — falta a conversa real (créditos da API) |
 | Projetos, tarefas, bugs, versões, histórico | ✅ implementado |
 | Arquivos (pastas, busca, privados, links, ideias) | ✅ implementado |

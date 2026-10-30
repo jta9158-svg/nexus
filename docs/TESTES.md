@@ -1,6 +1,6 @@
 # Testes do NEXUS
 
-Situação em **29/10/2026**, versão **0.1.0**. Tudo abaixo foi executado de verdade; o que ainda não pôde ser testado está marcado como **pendente**, com o motivo.
+Situação em **29/10/2026**, versão **0.1.1**. Tudo abaixo foi executado de verdade; o que ainda não pôde ser testado está marcado como **pendente**, com o motivo.
 
 ## 1. Testes automáticos
 
@@ -17,7 +17,7 @@ Situação em **29/10/2026**, versão **0.1.0**. Tudo abaixo foi executado de ve
 | Instalador do Windows | 7-Zip lista e testa o conteúdo do `NEXUS-Setup.exe` | todos os arquivos íntegros |
 | APK Android | `aapt2 dump badging` e `apksigner verify` | pacote `app.nexus.mobile`, versão 0.1.0, assinatura de depuração válida |
 
-### O que os 114 testes do banco cobrem
+### O que os 131 testes do banco cobrem
 
 | Área | Testes | Exemplos |
 |---|---|---|
@@ -34,6 +34,7 @@ Situação em **29/10/2026**, versão **0.1.0**. Tudo abaixo foi executado de ve
 | Claude Companion | 28 | ver tabela da seção 2 |
 | Tempo real | 4 | presença/“em call” do servidor só para membros; canal da DM só para participantes |
 | Moderação e posse | 5 | banido perde acesso e não volta pelo convite; só o dono transfere o servidor |
+| Claude na call (voz) | 17 | com o serviço de voz desligado ninguém chama; precisa do cargo “Usar o Claude” e das permissões “Ouvir” e “Falar”; quem não é membro não chama nem vê a sessão; canal de texto não aceita voz; no máximo um Claude por call; só quem chamou ou a moderação tira; o app não cria nem altera sessões; opções de voz validadas |
 
 ## 2. Testes obrigatórios do Claude Companion (seção 5.11 da especificação)
 
@@ -76,4 +77,12 @@ Depois de configurar Supabase, LiveKit e a chave do Claude (`CONFIGURACAO.md`):
 7. Instalação no iPhone/iPad (Tela de Início) e no Android (Chrome e APK).
 8. Teste K com a equipe.
 
-Os resultados serão registrados aqui.
+### Resultados até agora (29/10/2026)
+
+| Item | Resultado |
+|---|---|
+| 1. Cadastro e login | ✅ conta criada e login feito no servidor real (a primeira conta virou administradora) · **pendente** a recuperação de senha, que precisa de SMTP próprio |
+| Página de download | ✅ no ar; os botões levam ao instalador do Windows e ao APK da versão 0.1.1 |
+| 4–5. Claude (API) | 🟡 a chave é válida (a API responde), mas a conta da API está **sem créditos**. Os créditos mensais do Max só podem ser vinculados depois de 7 dias de plano. Enquanto isso, o app mostra “A conta da API do Claude está sem créditos…” em vez de falhar em silêncio |
+| Claude na call | ✅ o agente entrou numa sala de teste e ficou “ouvindo”, sem erros · **pendente** a conversa real (créditos) |
+| 2, 3, 6, 7, 8 | **pendentes** |

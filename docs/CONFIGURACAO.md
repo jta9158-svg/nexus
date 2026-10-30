@@ -11,7 +11,7 @@
 | Coleta do Roblox | ✅ agendada a cada 15 minutos (pg_cron) |
 | Calls (LiveKit) | ✅ projeto `alpha` na LiveKit Cloud; segredos `LIVEKIT_*` configurados |
 | Claude na call (voz) | ✅ agente `nexus-claude` publicado na LiveKit Cloud (`tools/deploy-voice-agent.mjs`); serviço de voz ativado |
-| Claude (API) | 🟡 chave `ANTHROPIC_API_KEY` configurada; falta a organização da API ter créditos (vincular os créditos do Max no claude.ai → Settings → Billing → API credits) |
+| Claude (API) | 🟡 chave `ANTHROPIC_API_KEY` configurada e válida (a API responde); falta **crédito** na organização da API. Os créditos do Max só aparecem para vincular depois de **7 dias de plano** (passo 2) |
 | Site e instaladores | repositório `jta9158-svg/nexus` no GitHub; site em `https://jta9158-svg.github.io/nexus/` |
 
 Segredos do projeto (só para o dono): <https://supabase.com/dashboard/project/qeugxkmoirqwbmdfwbrt/functions/secrets>
@@ -76,9 +76,17 @@ npx supabase secrets set \
 ## 2. Claude (API da Anthropic)
 
 1. Entre em <https://platform.claude.com> (Console) com a sua conta.
-2. **Se você tem o plano Max**: em claude.ai → **Settings → Billing → API credits → Link organization**, vincule a organização do Console (créditos de US$ 100 ou US$ 200 por mês, conforme o plano).
-3. No Console, em **API Keys**, crie uma chave chamada `nexus` (**SECRETO**) e configure um **limite de gastos** em *Limits*.
-4. Coloque a chave no `supabase secrets set ANTHROPIC_API_KEY=...` (passo 1.3).
+2. **Se você tem o plano Max** (US$ 100/mês no Max 5x, US$ 200/mês no Max 20x, sem cartão):
+   * A opção só aparece depois de **7 dias no plano** — antes disso ela fica escondida.
+   * Em claude.ai → **Configurações → Cobrança**, na parte de **créditos da API** (“API credits”), clique em **Vincular organização** (“Link organization”).
+   * Escolha a organização do Console **onde está a chave**. Não crie uma nova: depois só dá para trocar falando com o suporte da Anthropic.
+   * Os créditos aparecem no Console em **Billing → Promotional credits**. Não acumulam de um mês para o outro; quando acabam, a API para até o mês seguinte (nada é cobrado no plano).
+   * Os “Créditos de uso” do claude.ai são outra coisa e **não** servem para a API.
+   * Fonte: [API credits for Max and Team plans](https://platform.claude.com/docs/en/about-claude/api-credits-for-subscribers).
+3. Sem o Max: no Console, **Billing → Buy credits** (pré-pago).
+4. No Console, em **API Keys**, crie uma chave chamada `nexus` (**SECRETO**) e configure um **limite de gastos** em *Limits*.
+5. Coloque a chave no `supabase secrets set ANTHROPIC_API_KEY=...` (passo 1.3).
+6. Para conferir, abra o Claude no NEXUS e mande “oi”. Se faltar crédito, o app avisa isso com estas instruções.
 
 No app, em **Configurações → Administração**, ajuste: modelo do chat, modelo das tarefas, limite diário por pessoa e orçamento mensal.
 
