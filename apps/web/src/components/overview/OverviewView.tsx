@@ -15,7 +15,7 @@ import {
   Users,
 } from 'lucide-react';
 import { useApp, displayNameFor } from '../../store/app';
-import { useClaudeVisible, useSession } from '../../store/session';
+import { useClaudeVisible, useSession, NEXUS_IA_ATIVA } from '../../store/session';
 import { useCompanion } from '../../store/companion';
 import { callFunction, sb, currentConfig } from '../../lib/supabase';
 import { onConnectionChange } from '../../lib/realtime';
@@ -57,7 +57,7 @@ export function OverviewView() {
   useEffect(() => onConnectionChange(setRealtimeOk), []);
 
   useEffect(() => {
-    if (!companion.loaded) void companion.load();
+    if (NEXUS_IA_ATIVA && !companion.loaded) void companion.load();
     void (async () => {
       const [p, t, a, settings] = await Promise.all([
         sb().from('projects').select('*').neq('status', 'arquivado').order('updated_at', { ascending: false }).limit(12),
@@ -296,6 +296,7 @@ export function OverviewView() {
                   <ul className="space-y-2 text-sm">
                     <Integration ok label="Servidor NEXUS (Supabase)" detail={cfg ? new URL(cfg.supabaseUrl).host : '—'} />
                     <Integration ok={realtimeOk} label="Tempo real" detail={realtimeOk ? 'Conectado' : 'Reconectando…'} />
+                    {claudeVisible ? (
                     <Integration
                       ok={ai ? ai.status === 'ok' : quota?.allowed ? null : false}
                       label="NEXUS IA (API do Claude)"
@@ -311,6 +312,7 @@ export function OverviewView() {
                                 : quota?.reason ?? 'Sem acesso'
                       }
                     />
+                    ) : null}
                     <Integration ok={null} label="Calls (LiveKit)" detail="Verificado ao entrar em uma call" />
                     <Integration ok={players.length > 0 ? true : null} label="Roblox (dados públicos)" detail={players.length ? `${players.length} jogo(s)` : 'Nenhum jogo vinculado'} />
                     <Integration ok={false} label="Roblox (receita)" detail="Requer OAuth oficial — próxima fase" />
@@ -329,7 +331,7 @@ export function OverviewView() {
       </div>
       <Modal open={customizing} onClose={() => setCustomizing(false)} title="Personalizar a visão geral" description="Escolha o que aparece na sua tela inicial.">
         <div className="divide-y divide-line-soft">
-          {WIDGETS.map((w) => (
+          {WIDGETS.filter((w) => claudeVisible || (w.key !== 'tarefas' && w.key !== 'duvidas')).map((w) => (
             <Toggle key={w.key} checked={show(w.key)} onChange={(v) => void toggleWidget(w.key, v)} label={w.label} />
           ))}
         </div>

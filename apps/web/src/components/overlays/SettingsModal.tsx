@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Download, ImagePlus, LogOut, RefreshCw, Shield, Trash2 } from 'lucide-react';
 import { useApp } from '../../store/app';
-import { useSession } from '../../store/session';
+import { NEXUS_IA_ATIVA, useSession } from '../../store/session';
 import { readDevicePrefs, saveDevicePref, useCall } from '../../store/call';
 import { toast } from '../../store/toast';
 import { sb, currentConfig } from '../../lib/supabase';
@@ -274,7 +274,9 @@ function NotificationsTab() {
           {perm === 'denied' ? <p className="text-[12px] text-fg-3">Para liberar depois, use as configurações do navegador para este site.</p> : null}
         </>
       )}
-      <p className="text-[12px] text-fg-3">Você é notificado quando alguém te menciona, quando recebe mensagem privada e quando a NEXUS IA precisa de uma decisão sua.</p>
+      <p className="text-[12px] text-fg-3">
+        Você é notificado quando alguém te menciona{NEXUS_IA_ATIVA ? ', quando recebe mensagem privada e quando a NEXUS IA precisa de uma decisão sua.' : ' e quando recebe mensagem privada.'}
+      </p>
     </div>
   );
 }
@@ -444,10 +446,16 @@ function AdminTab() {
 
   return (
     <div className="space-y-5">
-      <Notice tone="info" title="Você é administrador do NEXUS">
-        A chave da API da Anthropic fica só no servidor (segredo da Edge Function). Aqui você controla quem usa e quanto.
-      </Notice>
-      {usage ? (
+      {NEXUS_IA_ATIVA ? (
+        <Notice tone="info" title="Você é administrador do NEXUS">
+          A chave da API da Anthropic fica só no servidor (segredo da Edge Function). Aqui você controla quem usa e quanto.
+        </Notice>
+      ) : (
+        <Notice tone="info" title="NEXUS IA desligada">
+          A NEXUS IA está escondida em todos os aparelhos, para todo mundo (inclusive você), até ser ligada de novo numa próxima versão.
+        </Notice>
+      )}
+      {NEXUS_IA_ATIVA && usage ? (
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-xl border border-line p-3">
             <div className="text-[12px] text-fg-3">Tokens neste mês</div>
@@ -461,6 +469,7 @@ function AdminTab() {
           </div>
         </div>
       ) : null}
+      {NEXUS_IA_ATIVA ? (
       <div className="grid sm:grid-cols-2 gap-3">
         <Field label="Modelo do chat">
           <Select value={settings.claude_model} onChange={(e) => setSettings({ ...settings, claude_model: e.target.value })}>
@@ -487,13 +496,16 @@ function AdminTab() {
           <Input type="number" min={0} step="1" value={settings.claude_monthly_budget_usd} onChange={(e) => setSettings({ ...settings, claude_monthly_budget_usd: Number(e.target.value) })} />
         </Field>
       </div>
+      ) : null}
       <Toggle checked={settings.signup_open} onChange={(v) => setSettings({ ...settings, signup_open: v })} label="Cadastro aberto" description="Informativo: para bloquear cadastros de fato, desative “Allow new users to sign up” no painel do Supabase (Auth → Providers)." />
+      {NEXUS_IA_ATIVA ? (
       <Toggle
         checked={settings.claude_admin_only ?? true}
         onChange={(v) => setSettings({ ...settings, claude_admin_only: v })}
         label="NEXUS IA só para mim"
         description="Ligado: só você vê e usa a NEXUS IA (chat, Companion, @NEXUS e a IA na call). Para as outras pessoas a NEXUS IA nem aparece, e o servidor bloqueia. Se você chamar a IA (@NEXUS) num canal ou numa call, quem estiver ali vê ou ouve a resposta."
       />
+      ) : null}
       <Toggle
         checked={settings.calls_everyone ?? true}
         onChange={(v) => setSettings({ ...settings, calls_everyone: v })}
@@ -503,7 +515,7 @@ function AdminTab() {
       <div className="flex justify-end">
         <Button onClick={() => void save()}>Salvar</Button>
       </div>
-      {settings.claude_admin_only ?? true ? null : (
+      {!NEXUS_IA_ATIVA || (settings.claude_admin_only ?? true) ? null : (
       <div>
         <div className="text-[12px] font-semibold uppercase tracking-wide text-fg-3 mb-2 flex items-center gap-1.5">
           <Shield className="size-3.5" /> Liberação individual da NEXUS IA

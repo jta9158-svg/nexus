@@ -110,6 +110,14 @@ export const useSession = create<SessionState>((set, get) => ({
  * (padrão), só o administrador do NEXUS vê o Claude AI, o Companion, o
  * @Claude e o botão de chamar o Claude na call. O servidor também bloqueia.
  */
+/**
+ * Chave geral da NEXUS IA no app. Desligada: a IA some de todos os aparelhos e de
+ * todas as pessoas, inclusive do administrador (chat, Companion, @NEXUS, IA na
+ * call, configurações). Para religar, troque para true e publique uma versão.
+ */
+export const NEXUS_IA_ATIVA = false;
+
 export function useClaudeVisible(): boolean {
-  return useSession((s) => s.isAdmin || !(s.appSettings?.claude_admin_only ?? true));
+  const visible = useSession((s) => s.isAdmin || !(s.appSettings?.claude_admin_only ?? true));
+  return NEXUS_IA_ATIVA && visible;
 }

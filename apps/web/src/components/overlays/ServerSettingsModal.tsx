@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowDown, ArrowUp, Ban, Copy, Crown, ImagePlus, KeyRound, Plus, Trash2, UserMinus } from 'lucide-react';
 import { useApp, displayNameFor } from '../../store/app';
-import { useClaudeVisible, useSession } from '../../store/session';
+import { useClaudeVisible, useSession, NEXUS_IA_ATIVA } from '../../store/session';
 import { toast } from '../../store/toast';
 import { sb } from '../../lib/supabase';
 import { publicUrl, randomId, safeFileName } from '../../lib/storage';
@@ -187,7 +187,7 @@ function RolesTab({ serverId }: { serverId: string }) {
   const groups = useMemo(() => {
     const g = new Map<string, PermissionInfo[]>();
     // Com "Claude só para o administrador", a permissão "Usar o Claude" não vale para ninguém: some da lista.
-    for (const p of PERMISSIONS) if (p.key !== 'use_claude' || !claudeOnlyAdmin) g.set(p.group, [...(g.get(p.group) ?? []), p]);
+    for (const p of PERMISSIONS) if (p.key !== 'use_claude' || (NEXUS_IA_ATIVA && !claudeOnlyAdmin)) g.set(p.group, [...(g.get(p.group) ?? []), p]);
     return Array.from(g.entries());
   }, [claudeOnlyAdmin]);
 

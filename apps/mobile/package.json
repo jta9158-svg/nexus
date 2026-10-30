@@ -1,6 +1,6 @@
 {
   "name": "nexus-mobile",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "private": true,
   "description": "NEXUS — app Android (Capacitor). No iPhone/iPad o NEXUS é instalado como PWA.",
   "scripts": {

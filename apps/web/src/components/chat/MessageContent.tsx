@@ -2,6 +2,7 @@ import { memo, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useApp } from '../../store/app';
+import { NEXUS_IA_ATIVA } from '../../store/session';
 import { deliverInvite, inviteCodeFromUrl } from '../../lib/invite';
 import { openExternal } from '../../lib/platform';
 
@@ -15,7 +16,7 @@ function transformUrl(url: string): string {
 function linkMentions(text: string, usernames: Map<string, string>): string {
   return text.replace(/(^|[^A-Za-z0-9_.@`[])@([A-Za-z0-9_](?:[A-Za-z0-9_.]{1,30}[A-Za-z0-9_]))/g, (all, pre: string, name: string) => {
     const lower = name.toLowerCase();
-    if (lower === 'claude' || lower === 'nexus') return `${pre}[@NEXUS IA](mention:claude)`;
+    if (NEXUS_IA_ATIVA && (lower === 'claude' || lower === 'nexus')) return `${pre}[@NEXUS IA](mention:claude)`;
     if (lower === 'todos' || lower === 'everyone') return `${pre}[@${name}](mention:todos)`;
     const id = usernames.get(lower);
     return id ? `${pre}[@${name}](mention:${id})` : all;

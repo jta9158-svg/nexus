@@ -266,7 +266,7 @@ for (const s of shots) {
     // A IA não aparece dentro dos servidores (só no Início, para o administrador)
     const voiceList = page.getByLabel('Na call Geral').first();
     const inCallText = (await voiceList.count()) ? await voiceList.innerText() : '';
-    console.log(`call: embaixo do canal de voz aparece ${/Marina/.test(inCallText) ? 'Marina' : 'NINGUÉM (erro)'}${/NEXUS IA/.test(inCallText) ? ' + NEXUS IA (só o administrador vê)' : ''}`);
+    console.log(`call: embaixo do canal de voz aparece ${/Marina/.test(inCallText) ? 'Marina' : 'NINGUÉM (erro)'} · NEXUS IA na lista ${/NEXUS IA/.test(inCallText) ? 'VISÍVEL (erro: a IA está desligada)' : 'escondida'}`);
     const iaInServer = await page.locator('nav, aside, div').getByRole('button', { name: /^NEXUS IA$|^NEXUS Companion$/ }).count();
     console.log(`servidor: NEXUS IA na barra do servidor ${iaInServer ? 'VISÍVEL (erro)' : 'escondida'}`);
     for (const [label, click] of [
@@ -277,14 +277,12 @@ for (const s of shots) {
       await page.waitForTimeout(1200);
       await page.screenshot({ path: join(out, `${label}.png`) });
     }
+    // NEXUS IA desligada em todos os aparelhos: nem o administrador vê (Início, call, configurações)
     await page.getByRole('button', { name: 'Início e mensagens privadas' }).click();
     await page.waitForTimeout(800);
-    await page.getByRole('button', { name: 'NEXUS Companion' }).first().click();
-    await page.waitForTimeout(1200);
-    await page.screenshot({ path: join(out, 'desktop-companion.png') });
-    await page.getByRole('tab', { name: /Modo e voz/ }).or(page.getByRole('button', { name: /Modo e voz/ })).first().click();
-    await page.waitForTimeout(600);
-    await page.screenshot({ path: join(out, 'desktop-companion-modo.png'), fullPage: true });
+    const iaHome = await page.getByRole('button', { name: /NEXUS IA|NEXUS Companion/ }).count();
+    await page.screenshot({ path: join(out, 'desktop-inicio-sem-ia.png') });
+    console.log(`NEXUS IA (administrador): ${iaHome ? 'VISÍVEL no Início (erro)' : 'some do Início'}`);
     await page.getByRole('button', { name: 'ALPHA - Templo da Magia' }).first().click();
     await page.waitForTimeout(1200);
     // Estilo Discord: menu do servidor, convite com PIN, configurações, criar servidor, entrar com link + PIN
@@ -349,6 +347,8 @@ for (const s of shots) {
     await page.screenshot({ path: join(out, 'iphone-menu.png') });
     // Celular: sem "Início" na barra de baixo; o controle mostra as conversas privadas na própria gaveta
     const inicioTab = await page.getByRole('navigation', { name: 'Navegação principal' }).getByRole('button', { name: 'Início' }).count();
+    const iaTab = await page.getByRole('navigation', { name: 'Navegação principal' }).getByRole('button', { name: 'NEXUS IA' }).count();
+    console.log(`celular: aba NEXUS IA ${iaTab ? 'VISÍVEL (erro)' : 'removida'}`);
     await page.getByRole('button', { name: 'Início e mensagens privadas' }).first().click();
     await page.waitForTimeout(600);
     await page.screenshot({ path: join(out, 'iphone-controle-privado.png') });

@@ -4,7 +4,7 @@ Central da equipe do **ALPHA — Templo da Magia** (e de outros jogos): chat e c
 
 Funciona no **Windows** (app instalável), no **navegador** e como app no **iPhone, iPad e Android**.
 
-## O que já está pronto (versão 0.1.8)
+## O que já está pronto (versão 0.1.9)
 
 | Área | Situação |
 |---|---|
@@ -15,7 +15,7 @@ Funciona no **Windows** (app instalável), no **navegador** e como app no **iPho
 | Links de convite como no Discord | ✅ o link abre uma página do convite que leva para o **app instalado** (Windows pelo protocolo `nexus://`, Android pelo intent com volta para o navegador) ou para o navegador; link de convite clicado no chat abre o convite dentro do app; botão “Entrar em um servidor” na barra dos servidores |
 | Amigos (como no Discord) | ✅ “Adicionar amigo” pelo nick (nome de usuário): a pessoa recebe o pedido e aceita ou recusa; amigos conversam no privado mesmo sem servidor em comum; desfazer amizade; bloquear (impede pedidos e mensagens privadas) |
 | Regras de acesso | ✅ **217 testes passando** (`docs/TESTES.md`) |
-| NEXUS IA (feita com o Claude) só para o administrador | ✅ na interface o assistente se chama **NEXUS IA** (@NEXUS no canal; “NEXUS IA” na call). Só o administrador vê e usa, e só no Início (não aparece dentro dos servidores); o servidor também bloqueia |
+| NEXUS IA (feita com o Claude) | ⏸️ **desligada por enquanto**: escondida em todos os aparelhos e para todo mundo, inclusive o administrador (chat, Companion, @NEXUS, IA na call e as configurações dela). O código continua pronto; para religar, troque `NEXUS_IA_ATIVA` para `true` em `apps/web/src/store/session.ts` e publique uma versão. Antes de desligar, só o administrador via e usava |
 | Chat em tempo real, menções, anexos, busca, não lidas, DMs e grupos | ✅ implementado — falta testar no servidor real |
 | Calls de voz, vídeo e compartilhamento de tela | ✅ no ar (LiveKit Cloud), com qualidade de tela ajustável, volume por pessoa e tela cheia. Quem está em cada canal de voz aparece embaixo do canal, como no Discord (presença em tempo real + lista da própria LiveKit), com quem está falando destacado. **Anti-ruído** (modelo Krisp da LiveKit, incluído no plano gratuito) ligado por padrão, com botão na call e em Configurações → Voz e vídeo |
 | Claude AI (chat com histórico, imagens, PDF, scripts, contexto do projeto) | ✅ implementado; chave da API configurada — falta **crédito** na conta da API (créditos do Max, `docs/CONFIGURACAO.md` passo 2) |
