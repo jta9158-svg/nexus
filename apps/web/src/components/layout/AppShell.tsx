@@ -6,7 +6,9 @@ import { useSession } from '../../store/session';
 import { useToasts } from '../../store/toast';
 import { onConnectionChange } from '../../lib/realtime';
 import { usePwa } from '../../lib/pwa';
-import { isIOS, isMobileOS, isStandalone } from '../../lib/platform';
+import { desktop, isCapacitor, isIOS, isMobileOS, isStandalone, openExternal } from '../../lib/platform';
+import { currentConfig } from '../../lib/supabase';
+import { APP_VERSION } from '../../config';
 import { cx, IconButton } from '../ui';
 import { TitleBar } from './TitleBar';
 import { ServerRail } from './ServerRail';
@@ -86,6 +88,56 @@ function Toaster() {
     </div>,
     document.body,
   );
+}
+
+/** Versão nova: no Windows pede para reiniciar (já baixou sozinha); no Android
+ *  (APK) avisa e leva para o download. */
+function AppUpdateBanner() {
+  const [ready, setReady] = useState<string | null>(null);
+  const [apk, setApk] = useState<string | null>(null);
+  useEffect(() => {
+    if (!desktop?.updates) return;
+    return desktop.updates.onStatus((s) => setReady(s.state === 'downloaded' ? s.version ?? 'nova' : null));
+  }, []);
+  useEffect(() => {
+    const repo = currentConfig()?.githubRepo;
+    if (!isCapacitor || !repo) return;
+    fetch(`https://api.github.com/repos/${repo}/releases/latest`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((rel: { tag_name?: string } | null) => {
+        const latest = (rel?.tag_name ?? '').replace(/^v/, '');
+        const newer = (a: string, b: string) => {
+          const x = a.split('.').map(Number);
+          const y = b.split('.').map(Number);
+          for (let i = 0; i < 3; i++) if ((x[i] ?? 0) !== (y[i] ?? 0)) return (x[i] ?? 0) > (y[i] ?? 0);
+          return false;
+        };
+        if (latest && newer(latest, APP_VERSION)) setApk(latest);
+      })
+      .catch(() => undefined);
+  }, []);
+  if (ready && desktop?.updates) {
+    return (
+      <div className="shrink-0 bg-accent/15 text-mention text-[13px] px-4 py-1.5 flex items-center justify-center gap-3" role="status">
+        <Download className="size-4" /> A versão {ready} do NEXUS já foi baixada.
+        <button className="underline font-semibold" onClick={() => desktop?.updates.install()}>
+          Reiniciar e atualizar
+        </button>
+      </div>
+    );
+  }
+  if (apk) {
+    const repo = currentConfig()?.githubRepo;
+    return (
+      <div className="shrink-0 bg-accent/15 text-mention text-[13px] px-4 py-1.5 flex items-center justify-center gap-3" role="status">
+        <Download className="size-4" /> Saiu a versão {apk} do app.
+        <button className="underline font-semibold" onClick={() => openExternal(`https://github.com/${repo}/releases/latest/download/NEXUS.apk`)}>
+          Baixar e instalar
+        </button>
+      </div>
+    );
+  }
+  return null;
 }
 
 function ConnectionBanner() {
@@ -219,6 +271,7 @@ export function AppShell() {
         <TitleBar />
       </div>
       <div className="md:hidden nx-safe-top" />
+      <AppUpdateBanner />
       <ConnectionBanner />
       <UpdateBanner />
       <InstallBanner />

@@ -332,6 +332,51 @@ for (const s of shots) {
   await ctx.close();
 }
 
+// App do Windows aberto por um link nexus://convite/CODIGO: o convite aparece sozinho.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 860 }, deviceScaleFactor: 1, locale: 'pt-BR', colorScheme: 'dark' });
+  await ctx.addInitScript(
+    ({ url, sess, server }) => {
+      localStorage.setItem('nexus.serverConfig.v1', JSON.stringify({ supabaseUrl: url, supabaseAnonKey: 'sb_publishable_teste' }));
+      localStorage.setItem('nexus.auth.v1', JSON.stringify(sess));
+      localStorage.setItem('nexus.lastServer.v1', server);
+      localStorage.setItem('nexus.installDismissed', '1');
+      let pending = 'nexus://convite/aB3dE5fG7h';
+      window.nexusDesktop = {
+        isDesktop: true,
+        platform: 'win32',
+        version: '9.9.9',
+        window: { minimize() {}, toggleMaximize() {}, close() {}, isMaximized: async () => false, onMaximizedChange: () => () => {} },
+        updates: { check: async () => {}, install() {}, onStatus: (cb) => (cb({ state: 'downloaded', version: '9.9.9' }), () => {}) },
+        screenShare: { onPickRequest: () => () => {}, respondPick() {} },
+        notify() {},
+        setBadgeCount() {},
+        openExternal() {},
+        getLaunchAtStartup: async () => false,
+        setLaunchAtStartup: async () => false,
+        onDeepLink: () => () => {},
+        takeDeepLink: async () => {
+          const u = pending;
+          pending = null;
+          return u;
+        },
+      };
+    },
+    { url: SB, sess: session, server: S1 },
+  );
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await mockSupabase(page);
+  await page.goto('http://localhost:4319/index.html');
+  await page.waitForTimeout(2500);
+  await page.screenshot({ path: join(out, 'windows-link-convite.png') });
+  const modal = await page.getByText('Entrar em um servidor').count();
+  const banner = await page.getByText('Reiniciar e atualizar').count();
+  console.log(`windows-link-convite: ${errors.length ? 'ERROS: ' + errors.join(' | ') : 'ok'} · convite pelo link nexus:// ${modal ? 'abriu' : 'NÃO abriu'} · aviso de atualização ${banner ? 'visível' : 'NÃO visível'}`);
+  await ctx.close();
+}
+
 // Convite aberto antes do login: mostra o servidor e já abre em "Criar conta".
 {
   const ctx = await browser.newContext({ ...devices['iPhone 15 Pro'], locale: 'pt-BR', colorScheme: 'dark' });

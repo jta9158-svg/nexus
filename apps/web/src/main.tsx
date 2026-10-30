@@ -5,6 +5,7 @@ import './index.css';
 import { getConfig } from './config';
 import { initSupabase } from './lib/supabase';
 import { initPwa } from './lib/pwa';
+import { initDeepLinks } from './lib/deeplink';
 import { SetupScreen } from './components/auth/AuthScreens';
 import App from './App';
 
@@ -12,6 +13,7 @@ const root = createRoot(document.getElementById('root')!);
 const cfg = getConfig();
 
 initPwa();
+initDeepLinks();
 
 if (!cfg) {
   root.render(

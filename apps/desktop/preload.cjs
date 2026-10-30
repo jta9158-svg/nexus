@@ -43,4 +43,5 @@ contextBridge.exposeInMainWorld('nexusDesktop', {
   getLaunchAtStartup: () => ipcRenderer.invoke('nexus:get-startup'),
   setLaunchAtStartup: (enabled) => ipcRenderer.invoke('nexus:set-startup', enabled),
   onDeepLink: (cb) => listen('nexus:deep-link', cb),
+  takeDeepLink: () => ipcRenderer.invoke('nexus:take-deep-link'),
 });

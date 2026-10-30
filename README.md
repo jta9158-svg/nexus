@@ -4,7 +4,7 @@ Central da equipe do **ALPHA — Templo da Magia** (e de outros jogos): chat e c
 
 Funciona no **Windows** (app instalável), no **navegador** e como app no **iPhone, iPad e Android**.
 
-## O que já está pronto (versão 0.1.4)
+## O que já está pronto (versão 0.1.5)
 
 | Área | Situação |
 |---|---|
@@ -12,6 +12,7 @@ Funciona no **Windows** (app instalável), no **navegador** e como app no **iPho
 | Login, cadastro, recuperação de senha | ✅ no ar — cadastro e login testados no servidor real; a recuperação de senha precisa de um SMTP próprio |
 | Servidores no estilo Discord | ✅ cada pessoa cria o próprio servidor (modelos Amigos, Jogos, Estudo, Estúdio ou do zero); **só entra com link de convite** (PIN opcional, com limite de tentativas); categorias de canais com arrastar e soltar; cargos com ordem e cor livre; apelido no servidor; banimentos; transferir dono; aviso de “entrou no servidor” |
 | Serviços só nos servidores de jogos | ✅ Faturamento Roblox, Projetos, Finanças e Arquivos aparecem nos modelos “Jogos” e “Estúdio de jogos”; o dono liga/desliga nas configurações do servidor |
+| Links de convite como no Discord | ✅ o link abre uma página do convite que leva para o **app instalado** (Windows pelo protocolo `nexus://`, Android pelo intent com volta para o navegador) ou para o navegador; link de convite clicado no chat abre o convite dentro do app; botão “Entrar em um servidor” na barra dos servidores |
 | Regras de acesso | ✅ **195 testes passando** (`docs/TESTES.md`) |
 | NEXUS IA (feita com o Claude) só para o administrador | ✅ na interface o assistente se chama **NEXUS IA** (@NEXUS no canal; “NEXUS IA” na call). Só o administrador vê e usa, e só no Início (não aparece dentro dos servidores); o servidor também bloqueia |
 | Chat em tempo real, menções, anexos, busca, não lidas, DMs e grupos | ✅ implementado — falta testar no servidor real |

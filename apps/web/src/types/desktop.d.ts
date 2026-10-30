@@ -40,6 +40,8 @@ export interface NexusDesktop {
   getLaunchAtStartup(): Promise<boolean>;
   setLaunchAtStartup(enabled: boolean): Promise<void>;
   onDeepLink(cb: (url: string) => void): () => void;
+  /** Link nexus:// que abriu o app (e ainda não foi tratado). */
+  takeDeepLink?(): Promise<string | null>;
 }
 
 declare global {

@@ -65,10 +65,25 @@ export function clearPendingInvite(): void {
   }
 }
 
-/** Link completo para mandar às pessoas. */
+/** Link completo para mandar às pessoas: abre a página do convite no site, que
+ *  leva para o app instalado (Windows/Android) ou para o navegador. */
 export function inviteLink(code: string): string {
-  const base = publicAppUrl(currentConfig());
+  const cfg = currentConfig();
+  if (cfg?.publicSiteUrl) return `${cfg.publicSiteUrl.replace(/\/+$/, '')}/?convite=${code}`;
+  const base = publicAppUrl(cfg);
   return base ? `${base}#convite=${code}` : code;
+}
+
+/** Código de convite dentro de um link qualquer (site, app web ou nexus://convite/CODIGO). */
+export function inviteCodeFromUrl(url: string): string | null {
+  const m = /(?:[?&#]convite=|nexus:\/*convite\/)([A-Za-z0-9]{4,32})/i.exec(url);
+  return m ? m[1] : null;
+}
+
+/** Avisa o app que chegou um convite (link nexus://, link no chat etc.). */
+export function deliverInvite(code: string): void {
+  savePendingInvite(code);
+  window.dispatchEvent(new CustomEvent('nexus:invite', { detail: code }));
 }
 
 /** PIN aleatório de 6 números (sem sequências óbvias como 123456 ou 000000). */

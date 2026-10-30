@@ -125,7 +125,18 @@ function InviteBanner({ code }: { code: string }) {
 }
 
 export function AuthScreen() {
-  const [inviteCode] = useState(pendingInviteCode);
+  const [inviteCode, setInviteCode] = useState(pendingInviteCode);
+  useEffect(() => {
+    const onInvite = (e: Event) => {
+      const code = (e as CustomEvent<string>).detail;
+      if (code) {
+        setInviteCode(code);
+        setMode('signup');
+      }
+    };
+    window.addEventListener('nexus:invite', onInvite);
+    return () => window.removeEventListener('nexus:invite', onInvite);
+  }, []);
   const [mode, setMode] = useState<Mode>(inviteCode ? 'signup' : 'login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

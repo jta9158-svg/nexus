@@ -1,19 +1,20 @@
 # Testes do NEXUS
 
-Situação em **30/10/2026**, versão **0.1.4**. Tudo abaixo foi executado de verdade; o que ainda não pôde ser testado está marcado como **pendente**, com o motivo.
+Situação em **30/10/2026**, versão **0.1.5**. Tudo abaixo foi executado de verdade; o que ainda não pôde ser testado está marcado como **pendente**, com o motivo.
 
 ## 1. Testes automáticos
 
 | Conjunto | Como rodar | Resultado |
 |---|---|---|
 | Banco e regras de acesso (PostgreSQL 18 via PGlite, imitando o Supabase: Auth, Storage, Realtime) | `cd supabase/tests && npm install && npm test` | **195 passaram, 0 falharam** |
+| Página do convite no site (PC, Android, iPhone): mostra o servidor, “Abrir no app NEXUS” (`nexus://` no PC, `intent://` no Android) e “Entrar pelo navegador” | `node apps/site/tests/invite.mjs` | **3 aparelhos ok** |
 | Organização dos canais (categorias, arrastar e soltar, subir/descer) | `node --experimental-strip-types apps/web/tests/layout.test.mjs` | **9 passaram, 0 falharam** |
 | Funções do servidor (Deno): cliente da API do Claude contra um servidor falso no formato oficial (streaming, `tool_use`, erro de crédito, custo), token do LiveKit (HS256), modos do Companion, regras de voz (nome “Claude”, silêncio, histórico, token de servidor) | `deno test --allow-net --allow-env supabase/functions/tests/` | **14 passaram, 0 falharam** |
 | Agente de voz (Python): regras (chamado pelo nome, modos, vozes, troca de quem fala, comandos) e o agente em modo texto contra um servidor falso (responde quando chamado, não interrompe conversa, pausado/silenciado, histórico) | `cd apps/voice-agent && pip install -r requirements.txt && python -m unittest discover -s tests` | **11 passaram, 0 falharam** |
 | Agente publicado na LiveKit Cloud | logs da LiveKit + despacho de teste para uma sala | trabalhador `nexus-claude` registrado; entrou na sala de teste, estado “ouvindo”, sem erros |
 | Checagem de tipos das 5 funções | `deno check supabase/functions/*/index.ts` | sem erros |
 | Checagem de tipos e build do app | `cd apps/web && npm run build` | sem erros |
-| Visual com servidor **simulado** (dados de exemplo só no teste): PC 1536 px, iPad, iPhone, Android; login com a dica de instalação; categorias na barra lateral; convite com PIN; criar servidor com modelos; entrar com link + PIN; convite aberto antes do login; **pessoa comum não vê o Claude** | `node apps/web/tests/visual.mjs` | 22 telas, sem erros de JavaScript; PIN visível no convite, campo de PIN ao entrar, Claude escondido para quem não é o administrador |
+| Visual com servidor **simulado** (dados de exemplo só no teste): PC 1536 px, iPad, iPhone, Android; login com a dica de instalação; categorias na barra lateral; convite com PIN; criar servidor com modelos; entrar com link + PIN; convite aberto antes do login; **pessoa comum não vê o Claude** | `node apps/web/tests/visual.mjs` | 23 telas, sem erros de JavaScript; app do Windows aberto por `nexus://convite/…` mostra o convite e o aviso de atualização; PIN visível no convite, campo de PIN ao entrar, Claude escondido para quem não é o administrador |
 | App do Windows (Electron) abrindo e mostrando o app | `xvfb-run node apps/web/tests/desktop-visual.mjs saida.png` | abriu e renderizou (no Linux) |
 | Instalador do Windows | 7-Zip lista e testa o conteúdo do `NEXUS-Setup.exe` | todos os arquivos íntegros |
 | APK Android | `aapt2 dump badging` e `apksigner verify` | pacote `app.nexus.mobile`, versão 0.1.0, assinatura de depuração válida |

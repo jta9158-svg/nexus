@@ -185,6 +185,110 @@
     }
   }
 
+  // ------------------------------------------------------------ convite
+  // Link de convite: .../nexus/?convite=CODIGO (como o discord.gg). Mostra o
+  // servidor e abre no app instalado (Windows/Android) ou no navegador.
+  function inviteCode() {
+    var m = /[?&#]convite=([A-Za-z0-9]{4,32})/.exec(location.search + location.hash);
+    return m ? m[1] : null;
+  }
+
+  function renderInvite(code) {
+    var box = $('invite');
+    if (!box) return;
+    var webUrl = new URL(appUrl, location.href).toString() + '#convite=' + code;
+    var appLink = 'nexus://convite/' + code;
+    var noApp = /[?&]semapp=1/.test(location.search);
+    var fallback = location.origin + location.pathname + '?convite=' + code + '&semapp=1';
+    var intentLink =
+      'intent://convite/' + code + '#Intent;scheme=nexus;package=app.nexus.mobile;S.browser_fallback_url=' + encodeURIComponent(fallback) + ';end';
+
+    var actions;
+    if (isAndroid) {
+      actions =
+        button('Abrir no app NEXUS', intentLink, 'primary btn-lg', icons.open) +
+        button('Entrar pelo navegador', webUrl, 'ghost btn-lg', icons.open) +
+        (cfg.apkAvailable && apkUrl ? button('Baixar o app (APK)', apkUrl, 'ghost btn-lg', icons.download, { download: true }) : '');
+    } else if (isIOS) {
+      actions = button('Entrar no servidor', webUrl, 'primary btn-lg', icons.open);
+    } else {
+      actions =
+        button('Abrir no app NEXUS', appLink, 'primary btn-lg', icons.open) +
+        button('Entrar pelo navegador', webUrl, 'ghost btn-lg', icons.open) +
+        (isWindows && winUrl ? button('Baixar para Windows', winUrl, 'ghost btn-lg', icons.download, { download: true }) : '');
+    }
+
+    box.innerHTML =
+      '<div class="invite-card">' +
+      '<div class="invite-icon" id="invite-icon">?</div>' +
+      '<p class="eyebrow">Você foi convidado para entrar em</p>' +
+      '<h1 class="invite-name" id="invite-name">um servidor do NEXUS</h1>' +
+      '<p class="small" id="invite-info"></p>' +
+      '<div class="primary">' + actions + '</div>' +
+      '<p class="small">' +
+      (isIOS
+        ? 'No iPhone e no iPad o NEXUS funciona pelo Safari — depois dá para adicionar à Tela de Início.'
+        : 'Já tem o app? Use <b>Abrir no app NEXUS</b>. Não tem? Entre pelo navegador ou baixe o app abaixo.') +
+      '</p>' +
+      '</div>';
+    box.hidden = false;
+
+    // Prévia do servidor (nome, membros, se pede PIN) — só leitura, sem login.
+    if (cfg.supabaseUrl && cfg.supabaseKey) {
+      fetch(cfg.supabaseUrl.replace(/\/+$/, '') + '/rest/v1/rpc/preview_invite', {
+        method: 'POST',
+        headers: { apikey: cfg.supabaseKey, Authorization: 'Bearer ' + cfg.supabaseKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_code: code }),
+      })
+        .then(function (r) {
+          return r.ok ? r.json() : [];
+        })
+        .then(function (rows) {
+          var s = rows && rows[0];
+          var name = $('invite-name');
+          var info = $('invite-info');
+          var icon = $('invite-icon');
+          if (!s) {
+            name.textContent = 'Convite não encontrado';
+            info.textContent = 'Confira o link ou peça um novo para quem te convidou.';
+            return;
+          }
+          name.textContent = s.name;
+          var parts = [];
+          if (s.valid) parts.push(s.member_count + (s.member_count === 1 ? ' membro' : ' membros'));
+          else parts.push(s.reason || 'Convite inválido');
+          if (s.valid && s.requires_pin) parts.push('pede PIN (peça a quem te convidou)');
+          info.textContent = parts.join(' · ');
+          if (s.icon_url && /^https:\/\//.test(s.icon_url)) {
+            icon.textContent = '';
+            var img = document.createElement('img');
+            img.src = s.icon_url;
+            img.alt = '';
+            icon.appendChild(img);
+          } else {
+            icon.textContent = (s.name || '?')
+              .split(/\s+/)
+              .filter(Boolean)
+              .slice(0, 2)
+              .map(function (w) {
+                return w.charAt(0).toUpperCase();
+              })
+              .join('');
+          }
+        })
+        .catch(function () {});
+    }
+
+    // No Android, tenta abrir o app direto (se não tiver, o Chrome volta para esta página).
+    if (isAndroid && !noApp) {
+      setTimeout(function () {
+        location.href = intentLink;
+      }, 350);
+    }
+  }
+
   render();
   renderQr();
+  var code = inviteCode();
+  if (code) renderInvite(code);
 })();

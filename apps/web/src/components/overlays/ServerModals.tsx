@@ -1056,7 +1056,11 @@ export function useInviteFromUrl() {
     };
     check();
     window.addEventListener('hashchange', check);
-    return () => window.removeEventListener('hashchange', check);
+    window.addEventListener('nexus:invite', check);
+    return () => {
+      window.removeEventListener('hashchange', check);
+      window.removeEventListener('nexus:invite', check);
+    };
   }, [ready, setModal]);
 }
 

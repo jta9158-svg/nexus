@@ -1,4 +1,4 @@
-import { Gamepad2, Plus } from 'lucide-react';
+import { Gamepad2, Link2, Plus } from 'lucide-react';
 import { useApp, serverUnread } from '../../store/app';
 import { cx } from '../ui';
 import { ServerIcon } from './ServerArt';
@@ -86,6 +86,11 @@ export function ServerRail({ className }: { className?: string }) {
       <RailItem active={false} label="Adicionar um servidor" onClick={() => setModal({ kind: 'createServer' })}>
         <span className="size-full flex items-center justify-center bg-[#1a1f2b] text-success hover:bg-success hover:text-white transition-colors">
           <Plus className="size-6" />
+        </span>
+      </RailItem>
+      <RailItem active={false} label="Entrar em um servidor com link de convite" onClick={() => setModal({ kind: 'joinServer' })}>
+        <span className="size-full flex items-center justify-center bg-[#1a1f2b] text-mention hover:bg-accent hover:text-white transition-colors">
+          <Link2 className="size-6" />
         </span>
       </RailItem>
     </nav>

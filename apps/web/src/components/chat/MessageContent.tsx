@@ -2,6 +2,7 @@ import { memo, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useApp } from '../../store/app';
+import { deliverInvite, inviteCodeFromUrl } from '../../lib/invite';
 import { openExternal } from '../../lib/platform';
 
 const SAFE_URL = /^(https?:|mailto:|mention:)/i;
@@ -61,7 +62,9 @@ export const MessageContent = memo(function MessageContent({ content, highlightS
                 href={href}
                 onClick={(e) => {
                   e.preventDefault();
-                  if (href) openExternal(href);
+                  const code = href ? inviteCodeFromUrl(href) : null;
+                  if (code) deliverInvite(code);
+                  else if (href) openExternal(href);
                 }}
               >
                 {children}

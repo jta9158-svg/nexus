@@ -59,8 +59,9 @@ function findDeepLink(argv) {
 
 function sendDeepLink(url) {
   if (!url) return;
+  // Guarda até o app web pedir (nexus:take-deep-link) e avisa se a janela já estiver pronta.
+  pendingDeepLink = url;
   if (win && !win.webContents.isLoading()) win.webContents.send('nexus:deep-link', url);
-  else pendingDeepLink = url;
 }
 
 app.on('second-instance', (_event, argv) => {
@@ -316,6 +317,11 @@ function setupProtocol() {
 
 // ---------------------------------------------------------------- IPC
 function setupIpc() {
+  ipcMain.handle('nexus:take-deep-link', () => {
+    const url = pendingDeepLink;
+    pendingDeepLink = null;
+    return url;
+  });
   ipcMain.on('nexus:window', (_e, action) => {
     if (!win) return;
     if (action === 'minimize') win.minimize();
