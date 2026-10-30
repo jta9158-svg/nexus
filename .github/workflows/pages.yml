@@ -62,9 +62,14 @@ jobs:
           cp -r apps/web/dist/. public/app/
           VERSION=$(node -p "require('./apps/desktop/package.json').version")
           # Endereço e chave PÚBLICA do servidor (os mesmos do app web) para a prévia dos convites
-          ENVF=apps/web/.env.production; [ -f apps/web/.env.production.local ] && ENVF=apps/web/.env.production.local
-          SUPA_URL=$(grep -E '^VITE_SUPABASE_URL=' "$ENVF" | head -1 | cut -d= -f2-)
-          SUPA_KEY=$(grep -E '^VITE_SUPABASE_ANON_KEY=' "$ENVF" | head -1 | cut -d= -f2-)
+          pick() {
+            v=$(grep -hE "^$1=" apps/web/.env.production.local 2>/dev/null | head -1 | cut -d= -f2-)
+            [ -z "$v" ] && v=$(grep -hE "^$1=" apps/web/.env.production 2>/dev/null | head -1 | cut -d= -f2-)
+            printf '%s' "$v"
+          }
+          SUPA_URL=$(pick VITE_SUPABASE_URL)
+          SUPA_KEY=$(pick VITE_SUPABASE_ANON_KEY)
+          [ -n "$SUPA_URL" ] || echo "::warning::Sem endereço do servidor para a prévia dos convites" 
           printf "window.NEXUS_SITE = { repo: '%s', appUrl: './app/', windowsAvailable: true, apkAvailable: true, version: '%s', supabaseUrl: '%s', supabaseKey: '%s' };\n" "${GITHUB_REPOSITORY}" "$VERSION" "$SUPA_URL" "$SUPA_KEY" > public/config.js
           touch public/.nojekyll
 
