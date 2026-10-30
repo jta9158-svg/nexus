@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0B0E14" />
+    <meta name="color-scheme" content="dark" />
+    <title>Baixar o NEXUS</title>
+    <meta name="description" content="Baixe o NEXUS para Windows, Android, iPhone e iPad — comunicação, IA e gestão dos seus jogos Roblox em um só lugar." />
+    <meta property="og:title" content="NEXUS — baixe para Windows, Android, iPhone e iPad" />
+    <meta property="og:description" content="Comunicação, calls, Claude AI e gestão dos seus jogos Roblox em um só lugar." />
+    <link rel="icon" type="image/svg+xml" href="./assets/nexus-mark.svg" />
+    <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="glow" aria-hidden="true"></div>
+    <header class="top">
+      <a class="brand" href="./" aria-label="NEXUS — início">
+        <img src="./assets/nexus-mark.svg" alt="" width="30" height="30" />
+        <span>NEXUS</span>
+      </a>
+      <a class="top-link" href="./app/" id="open-web-top">Abrir no navegador</a>
+    </header>
+
+    <main>
+      <section class="hero">
+        <p class="eyebrow" id="detected">Detectando seu aparelho…</p>
+        <h1>Sua equipe, seus jogos e o Claude <span class="grad">em um só lugar</span>.</h1>
+        <p class="lead">Chat e calls com a equipe, Claude AI trabalhando junto, projetos, arquivos e as métricas do seu jogo Roblox.</p>
+
+        <div class="primary" id="primary"></div>
+        <p class="small" id="primary-note"></p>
+      </section>
+
+      <section class="guide" id="guide" hidden></section>
+
+      <section class="platforms" aria-labelledby="outras">
+        <h2 id="outras">Outras plataformas</h2>
+        <div class="grid">
+          <article class="card" id="card-windows">
+            <div class="card-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path fill="currentColor" d="M3 5.5 10.5 4.4v7.1H3zM11.5 4.3 21 3v8.5h-9.5zM3 12.5h7.5v7.1L3 18.5zm8.5 0H21V21l-9.5-1.3z"/></svg>
+            </div>
+            <h3>Windows</h3>
+            <p>Windows 10 e 11 (64 bits). Fica na bandeja, notifica e compartilha tela.</p>
+            <a class="btn btn-secondary" data-download="windows" href="#">Baixar</a>
+          </article>
+          <article class="card" id="card-android">
+            <div class="card-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path fill="currentColor" d="M7.2 9h9.6c.7 0 1.2.5 1.2 1.2v7.3c0 .7-.5 1.2-1.2 1.2h-.9v2.2a1.1 1.1 0 0 1-2.2 0v-2.2h-3.4v2.2a1.1 1.1 0 0 1-2.2 0v-2.2h-.9c-.7 0-1.2-.5-1.2-1.2v-7.3C6 9.5 6.5 9 7.2 9zm-2.6.2c.6 0 1.1.5 1.1 1.1v5.2a1.1 1.1 0 0 1-2.2 0v-5.2c0-.6.5-1.1 1.1-1.1zm14.8 0c.6 0 1.1.5 1.1 1.1v5.2a1.1 1.1 0 0 1-2.2 0v-5.2c0-.6.5-1.1 1.1-1.1zM8.4 3.1l1 1.6A5.9 5.9 0 0 1 12 4.1c.9 0 1.8.2 2.6.6l1-1.6a.4.4 0 1 1 .7.4l-.9 1.5A5.6 5.6 0 0 1 18 8.2H6a5.6 5.6 0 0 1 2.6-3.2l-.9-1.5a.4.4 0 1 1 .7-.4zM9.6 6.2a.6.6 0 1 0 0 1.2.6.6 0 0 0 0-1.2zm4.8 0a.6.6 0 1 0 0 1.2.6.6 0 0 0 0-1.2z"/></svg>
+            </div>
+            <h3>Android</h3>
+            <p>Instale direto pelo Chrome (recomendado) ou baixe o APK.</p>
+            <a class="btn btn-secondary" href="#guia-android" data-show-guide="android">Como instalar</a>
+          </article>
+          <article class="card" id="card-ios">
+            <div class="card-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="10" y="18.3" width="4" height="1.2" rx=".6" fill="currentColor"/></svg>
+            </div>
+            <h3>iPhone</h3>
+            <p>Instale pela Tela de Início do Safari — funciona como app.</p>
+            <a class="btn btn-secondary" href="#guia-ios" data-show-guide="ios">Como instalar</a>
+          </article>
+          <article class="card" id="card-ipad">
+            <div class="card-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><rect x="3.5" y="2.5" width="17" height="19" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="18.8" r=".9" fill="currentColor"/></svg>
+            </div>
+            <h3>iPad</h3>
+            <p>Mesmo jeito do iPhone, com o layout de tablet.</p>
+            <a class="btn btn-secondary" href="#guia-ios" data-show-guide="ipad">Como instalar</a>
+          </article>
+          <article class="card" id="card-web">
+            <div class="card-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.7 5.6 3.7 9S14.5 18.4 12 21c-2.5-2.6-3.7-5.6-3.7-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+            </div>
+            <h3>Navegador</h3>
+            <p>Mac, Linux ou qualquer computador: use direto, sem instalar.</p>
+            <a class="btn btn-secondary" href="./app/" id="open-web">Abrir</a>
+          </article>
+        </div>
+      </section>
+
+      <section class="qr" aria-labelledby="qr-title">
+        <div>
+          <h2 id="qr-title">Abrir no celular</h2>
+          <p>Aponte a câmera do celular para o código e siga o passo a passo do seu aparelho.</p>
+        </div>
+        <div class="qr-box" id="qr" role="img" aria-label="QR code desta página"></div>
+      </section>
+
+      <section class="faq" aria-labelledby="faq-title">
+        <h2 id="faq-title">Perguntas frequentes</h2>
+        <details>
+          <summary>O Windows mostrou “O Windows protegeu o computador”. É seguro?</summary>
+          <p>Esse aviso (SmartScreen) aparece para programas novos que ainda não têm assinatura digital paga. Clique em <b>Mais informações</b> e depois em <b>Executar assim mesmo</b>. Quando o NEXUS tiver certificado de assinatura, o aviso some.</p>
+        </details>
+        <details>
+          <summary>Por que no iPhone não tem “baixar da App Store”?</summary>
+          <p>Para publicar na App Store é preciso uma conta paga de desenvolvedor da Apple. Enquanto isso, o NEXUS é instalado pela Tela de Início: ele abre em tela cheia, com ícone próprio e notificações (iOS 16.4 ou mais novo).</p>
+        </details>
+        <details>
+          <summary>O Android bloqueou o APK. E agora?</summary>
+          <p>Desde 30/09/2026 o Android no Brasil exige que apps instalados fora da Play Store sejam de desenvolvedores verificados; apps não verificados exigem um processo avançado com espera de 24 horas. Use a opção <b>Instalar pelo Chrome</b>, que não tem essa restrição e recebe atualizações automaticamente.</p>
+        </details>
+        <details>
+          <summary>Meus dados ficam seguros?</summary>
+          <p>Cada pessoa tem a própria conta e só vê os servidores, canais e arquivos aos quais tem acesso. Dados financeiros e do Roblox ficam restritos a quem tem permissão.</p>
+        </details>
+        <details>
+          <summary>Dá para compartilhar a tela no celular?</summary>
+          <p>Ainda não: os navegadores do iPhone/iPad e do Android não permitem. No celular você fala, ouve e usa a câmera. Para compartilhar a tela, use o app do Windows ou o Chrome/Edge no computador.</p>
+        </details>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <span>NEXUS <span id="version"></span></span>
+      <span>Feito para equipes de desenvolvimento de jogos.</span>
+    </footer>
+
+    <script src="./config.js"></script>
+    <script src="./assets/vendor/qrcode.js"></script>
+    <script src="./site.js"></script>
+  </body>
+</html>

@@ -1,0 +1,151 @@
+# Lança uma versão: instalador do Windows (.exe) e app Android (.apk) na
+# Release do GitHub. Dispare criando uma tag:  git tag v0.2.0 && git push --tags
+name: Lançar versão
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versão (ex.: 0.2.0)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        shell: bash
+        run: |
+          V="${{ github.event.inputs.version }}"
+          if [ -z "$V" ]; then V="${GITHUB_REF_NAME#v}"; fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Configuração pública do servidor
+        working-directory: apps/web
+        env:
+          SB_URL: ${{ vars.SUPABASE_URL }}
+          SB_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+          SITE_URL: ${{ vars.PUBLIC_SITE_URL }}
+          APP_VERSION: ${{ steps.v.outputs.version }}
+        run: |
+          {
+            [ -n "$SB_URL" ] && echo "VITE_SUPABASE_URL=$SB_URL"
+            [ -n "$SB_KEY" ] && echo "VITE_SUPABASE_ANON_KEY=$SB_KEY"
+            [ -n "$SITE_URL" ] && echo "VITE_PUBLIC_SITE_URL=$SITE_URL"
+            echo "VITE_GITHUB_REPO=$GITHUB_REPOSITORY"
+            echo "VITE_APP_VERSION=$APP_VERSION"
+          } > .env.production.local || true
+          cat .env.production.local
+      - name: Compilar o app web
+        working-directory: apps/web
+        run: |
+          npm ci
+          npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: apps/web/dist
+
+  windows:
+    needs: web
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/desktop/package-lock.json
+      - uses: actions/download-artifact@v4
+        with:
+          name: web-dist
+          path: apps/web/dist
+      - name: Certificado de assinatura (opcional)
+        shell: bash
+        env:
+          CERT: ${{ secrets.WINDOWS_CERT_P12_BASE64 }}
+          CERT_PASS: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+        run: |
+          if [ -n "$CERT" ]; then
+            echo "CSC_LINK=$CERT" >> "$GITHUB_ENV"
+            echo "CSC_KEY_PASSWORD=$CERT_PASS" >> "$GITHUB_ENV"
+          else
+            echo "CSC_IDENTITY_AUTO_DISCOVERY=false" >> "$GITHUB_ENV"
+          fi
+      - name: Gerar e publicar o instalador
+        working-directory: apps/desktop
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEXUS_VERSION: ${{ needs.web.outputs.version }}
+          NEXUS_GH_OWNER: ${{ github.repository_owner }}
+          NEXUS_GH_REPO: ${{ github.event.repository.name }}
+        run: |
+          npm ci
+          npm run release:win
+
+  android:
+    needs: [web, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+      - uses: actions/download-artifact@v4
+        with:
+          name: web-dist
+          path: apps/web/dist
+      - name: Sincronizar o app web com o Android
+        working-directory: apps/mobile
+        run: |
+          npm ci
+          node scripts/copy-web.cjs
+          npx cap sync android
+      - name: Keystore de release (opcional)
+        env:
+          KS: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KS" ]; then
+            echo "$KS" | base64 -d > "$RUNNER_TEMP/nexus.keystore"
+            echo "ANDROID_KEYSTORE_FILE=$RUNNER_TEMP/nexus.keystore" >> "$GITHUB_ENV"
+          fi
+      - name: Compilar o APK
+        working-directory: apps/mobile/android
+        env:
+          NEXUS_VERSION: ${{ needs.web.outputs.version }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          if [ -n "$ANDROID_KEYSTORE_FILE" ]; then
+            ./gradlew assembleRelease --no-daemon
+            cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/NEXUS.apk"
+          else
+            ./gradlew assembleDebug --no-daemon
+            cp app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/NEXUS.apk"
+          fi
+      - name: Anexar o APK à Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.web.outputs.version }}
+          files: ${{ runner.temp }}/NEXUS.apk

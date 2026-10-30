@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="nx-a" x1="10" y1="8" x2="54" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7DB4FF"/>
+      <stop offset="0.55" stop-color="#5B7CFF"/>
+      <stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="nx-b" x1="16" y1="10" x2="48" y2="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2F5BFF"/>
+      <stop offset="1" stop-color="#5B32D6"/>
+    </linearGradient>
+  </defs>
+  <!-- pilar esquerdo -->
+  <rect x="10" y="10" width="13" height="44" rx="4.5" fill="url(#nx-a)"/>
+  <!-- pilar direito -->
+  <rect x="41" y="10" width="13" height="44" rx="4.5" fill="url(#nx-a)"/>
+  <!-- fita diagonal (dobra) -->
+  <path d="M12.2 13.6c-1.1-1.7.1-3.6 2.1-3.6h6.3c1.5 0 2.9.8 3.7 2.1l26.9 40.3c1.1 1.7-.1 3.6-2.1 3.6h-6.3c-1.5 0-2.9-.8-3.7-2.1z" fill="url(#nx-b)"/>
+  <path d="M23 12.4 41 39.5V54L23 26.9z" fill="#ffffff" fill-opacity="0.10"/>
+</svg>

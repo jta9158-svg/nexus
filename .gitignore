@@ -1,0 +1,33 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+# Endereço e chave PÚBLICA do servidor (vão para dentro do app de qualquer jeito)
+!apps/web/.env.production
+
+# app web
+apps/web/dist/
+apps/web/dev-dist/
+
+# desktop
+apps/desktop/web/
+apps/desktop/release/
+
+# mobile
+apps/mobile/www/
+apps/mobile/android/local.properties
+apps/mobile/android/.gradle/
+apps/mobile/android/build/
+apps/mobile/android/app/build/
+apps/mobile/android/app/src/main/assets/public/
+apps/mobile/android/app/src/main/assets/capacitor.config.json
+apps/mobile/android/capacitor-cordova-android-plugins/build/
+*.keystore
+*.jks
+
+# supabase local
+supabase/.branches/
+supabase/.temp/

@@ -1,0 +1,80 @@
+# Publica a página de download (raiz) e o app web/PWA (/app/) no GitHub Pages.
+name: Site e app web
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/**'
+      - 'apps/site/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Configuração pública do servidor
+        working-directory: apps/web
+        env:
+          # Valores PÚBLICOS (chave anon/publishable). Se as variáveis do repositório
+          # (Settings → Secrets and variables → Actions → Variables) existirem, elas
+          # substituem o apps/web/.env.production do repositório.
+          SB_URL: ${{ vars.SUPABASE_URL }}
+          SB_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+          SITE_URL: ${{ vars.PUBLIC_SITE_URL }}
+        run: |
+          {
+            [ -n "$SB_URL" ] && echo "VITE_SUPABASE_URL=$SB_URL"
+            [ -n "$SB_KEY" ] && echo "VITE_SUPABASE_ANON_KEY=$SB_KEY"
+            [ -n "$SITE_URL" ] && echo "VITE_PUBLIC_SITE_URL=$SITE_URL"
+            echo "VITE_GITHUB_REPO=$GITHUB_REPOSITORY"
+          } > .env.production.local || true
+          cat .env.production.local
+
+      - name: Compilar o app web
+        working-directory: apps/web
+        run: |
+          npm ci
+          npm run build
+
+      - name: Montar o site
+        run: |
+          mkdir -p public/app
+          cp -r apps/site/. public/
+          cp -r apps/web/dist/. public/app/
+          VERSION=$(node -p "require('./apps/desktop/package.json').version")
+          printf "window.NEXUS_SITE = { repo: '%s', appUrl: './app/', windowsAvailable: true, apkAvailable: true, version: '%s' };\n" "${GITHUB_REPOSITORY}" "$VERSION" > public/config.js
+          touch public/.nojekyll
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

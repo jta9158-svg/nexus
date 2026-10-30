@@ -1,0 +1,14 @@
+{
+  "appId": "app.nexus.mobile",
+  "appName": "NEXUS",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "backgroundColor": "#0B0E14",
+    "allowMixedContent": false,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false
+  }
+}
