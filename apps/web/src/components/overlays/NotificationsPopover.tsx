@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { AtSign, Bell, CheckCheck, HelpCircle, MessageSquare, Sparkles } from 'lucide-react';
+import { AtSign, Bell, CheckCheck, HelpCircle, MessageSquare, Sparkles, UserPlus } from 'lucide-react';
 import { useApp } from '../../store/app';
 import { formatRelative } from '../../lib/format';
 import { ensureNotificationPermission } from '../../lib/notify';
@@ -14,6 +14,7 @@ const ICON: Record<NotificationRow['kind'], React.ReactNode> = {
   question: <HelpCircle className="size-4" />,
   claude: <Sparkles className="size-4" />,
   system: <Bell className="size-4" />,
+  friend: <UserPlus className="size-4" />,
 };
 
 export function NotificationsPopover({ onClose }: { onClose: () => void }) {
@@ -47,6 +48,7 @@ export function NotificationsPopover({ onClose }: { onClose: () => void }) {
       await selectServer(n.link.server_id);
       openChannel(n.link.server_id, n.link.channel_id);
     } else if (n.link.task_id || n.link.question_id) openView({ kind: 'companion' });
+    else if (n.link.friends) openView({ kind: 'friends' });
   };
 
   return (

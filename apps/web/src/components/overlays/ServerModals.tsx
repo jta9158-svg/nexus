@@ -15,6 +15,7 @@ import {
   MessageSquare,
   Sparkles,
   Trash2,
+  UserPlus,
   Users,
   Volume2,
 } from 'lucide-react';
@@ -39,6 +40,8 @@ import {
 import type { Channel, ChannelCategory, InvitePreview, JoinResult, Member, Profile } from '../../types/db';
 import { Avatar, Button, cx, Field, IconButton, Input, Modal, Notice, Select, Spinner, Textarea, Toggle } from '../ui';
 import { ServerBanner, ServerIcon } from '../layout/ServerArt';
+import { FriendBadge, ProfileFriendActions } from '../friends/ProfileFriendActions';
+import { otherOf, useFriends } from '../../store/friends';
 
 // ---------------------------------------------------------------------
 // Criar servidor (modelos como no Discord)
@@ -903,6 +906,8 @@ export function NewDmModal() {
   const profiles = useApp((s) => s.profiles);
   const servers = useApp((s) => s.servers);
   const me = useSession((s) => s.userId);
+  const friendRows = useFriends((s) => s.rows);
+  const blocked = useFriends((s) => s.blocked);
   const open = modal?.kind === 'newDm';
   const [q, setQ] = useState('');
   const [selected, setSelected] = useState<string[]>([]);
@@ -913,10 +918,13 @@ export function NewDmModal() {
     setQ('');
     setSelected([]);
     for (const s of servers) void useApp.getState().loadServer(s.id);
+    void useFriends.getState().load().catch(() => undefined);
   }, [open, servers]);
 
-  const people: Profile[] = Array.from(new Set(Object.values(members).flat().map((m) => m.user_id)))
-    .filter((id) => id !== me)
+  // Amigos primeiro, depois quem participa de algum servidor com você.
+  const friendIds = friendRows.filter((r) => r.status === 'aceita').map(otherOf);
+  const people: Profile[] = Array.from(new Set([...friendIds, ...Object.values(members).flat().map((m) => m.user_id)]))
+    .filter((id) => id !== me && !blocked.includes(id))
     .map((id) => profiles[id])
     .filter((p): p is Profile => !!p)
     .filter((p) => !q || p.display_name.toLowerCase().includes(q.toLowerCase()) || p.username.includes(q.toLowerCase()))
@@ -946,7 +954,7 @@ export function NewDmModal() {
       open={open}
       onClose={() => setModal(null)}
       title="Nova mensagem privada"
-      description="Você pode conversar com quem participa de algum servidor com você."
+      description="Você pode conversar com seus amigos e com quem participa de algum servidor com você."
       footer={
         <Button onClick={() => void start()} disabled={!selected.length} loading={busy} icon={<MessageSquare className="size-4" />}>
           {selected.length > 1 ? `Criar grupo (${selected.length + 1})` : 'Abrir conversa'}
@@ -955,7 +963,24 @@ export function NewDmModal() {
     >
       <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar pessoas" className="mb-3" />
       <div className="max-h-80 overflow-y-auto nx-scroll space-y-1">
-        {people.length === 0 ? <p className="text-sm text-fg-3 py-4 text-center">Ninguém encontrado. Convide pessoas para um servidor primeiro.</p> : null}
+        {people.length === 0 ? (
+          <div className="py-4 text-center space-y-3">
+            <p className="text-sm text-fg-3">{q ? 'Ninguém encontrado com esse nome.' : 'Você ainda não tem amigos aqui. Adicione alguém pelo nick.'}</p>
+            {!q ? (
+              <Button
+                size="sm"
+                variant="success"
+                icon={<UserPlus className="size-4" />}
+                onClick={() => {
+                  setModal(null);
+                  useApp.getState().openView({ kind: 'friends' });
+                }}
+              >
+                Adicionar amigo
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
         {people.map((p) => {
           const on = selected.includes(p.id);
           return (
@@ -1002,7 +1027,10 @@ export function ProfileModal() {
           <div className="h-24 rounded-t-2xl" style={{ background: `linear-gradient(135deg, ${profile.accent_color ?? '#5b7cff'}, #8b5cf6)` }} />
           <div className="px-5 pb-5 -mt-10">
             <Avatar name={profile.display_name} url={profile.avatar_url} size={80} className="ring-[6px] ring-[#131822] rounded-full" />
-            <h2 className="text-xl font-bold mt-2">{member?.nickname ?? profile.display_name}</h2>
+            <h2 className="text-xl font-bold mt-2 flex items-center gap-2 flex-wrap">
+              <span>{member?.nickname ?? profile.display_name}</span>
+              {userId !== me ? <FriendBadge userId={profile.id} /> : null}
+            </h2>
             <p className="text-sm text-fg-3">@{profile.username}</p>
             {profile.bio ? <p className="text-sm text-fg-2 mt-3 whitespace-pre-wrap">{profile.bio}</p> : null}
             {myRoles.length ? (
@@ -1015,22 +1043,7 @@ export function ProfileModal() {
               </div>
             ) : null}
             <p className="text-[12px] text-fg-3 mt-3">No NEXUS desde {formatDate(profile.created_at)}</p>
-            {userId !== me ? (
-              <Button
-                className="w-full mt-4"
-                icon={<MessageSquare className="size-4" />}
-                onClick={async () => {
-                  try {
-                    await useApp.getState().startDmWith(userId!);
-                    setModal(null);
-                  } catch (err) {
-                    toast.error(err);
-                  }
-                }}
-              >
-                Enviar mensagem
-              </Button>
-            ) : null}
+            {userId !== me ? <ProfileFriendActions profile={profile} onDone={() => setModal(null)} /> : null}
           </div>
         </div>
       ) : (

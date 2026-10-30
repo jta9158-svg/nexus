@@ -23,6 +23,8 @@ import { FinanceView } from '../finance/FinanceView';
 import { FilesView } from '../files/FilesView';
 import { RobloxView } from '../roblox/RobloxView';
 import { OverviewView } from '../overview/OverviewView';
+import { FriendsView } from '../friends/FriendsView';
+import { useFriends } from '../../store/friends';
 import { SearchModal } from '../overlays/SearchModal';
 import { CategoryModal, ChannelModal, CreateServerModal, InviteModal, JoinServerModal, NewDmModal, NicknameModal, ProfileModal, useInviteFromUrl } from '../overlays/ServerModals';
 import { ServerSettingsModal } from '../overlays/ServerSettingsModal';
@@ -48,6 +50,8 @@ function MainView() {
       return <ClaudeView conversationId={view.conversationId} />;
     case 'companion':
       return <CompanionView />;
+    case 'friends':
+      return <FriendsView />;
     case 'projects':
       return <ProjectsView serverId={view.serverId} projectId={view.projectId} />;
     case 'finance':
@@ -261,6 +265,9 @@ export function AppShell() {
   const notificationsOpen = useApp((s) => s.notificationsOpen);
   const isMobile = useIsMobile();
   useInviteFromUrl();
+  useEffect(() => {
+    void useFriends.getState().load();
+  }, []);
 
   const sidebar = activeServerId ? <ServerSidebar serverId={activeServerId} /> : <HomeSidebar />;
   const hasRight = view.kind === 'channel';

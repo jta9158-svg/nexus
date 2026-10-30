@@ -21,6 +21,7 @@ import {
   Sparkles,
   UserPen,
   UserPlus,
+  Users,
   Volume2,
   Wallet,
   X,
@@ -28,6 +29,7 @@ import {
 import { useApp, displayNameFor } from '../../store/app';
 import { useClaudeVisible, useSession } from '../../store/session';
 import { useCall } from '../../store/call';
+import { useFriends } from '../../store/friends';
 import { toast } from '../../store/toast';
 import { sb } from '../../lib/supabase';
 import { hasPerm } from '../../lib/permissions';
@@ -619,6 +621,7 @@ export function HomeSidebar() {
   const setModal = useApp((s) => s.setModal);
   const me = useSession((s) => s.userId);
   const claudeVisible = useClaudeVisible();
+  const pendingFriends = useFriends((s) => s.rows.filter((r) => r.status === 'pendente' && r.addressee === me).length);
 
   const onlineIds = new Set<string>();
   for (const map of Object.values(presence)) for (const id of Object.keys(map)) onlineIds.add(id);
@@ -630,6 +633,7 @@ export function HomeSidebar() {
       </div>
       <div className="flex-1 overflow-y-auto nx-scroll px-2 pb-3 pt-2">
         <NavItem icon={<LayoutDashboard className="size-[18px]" />} label="Visão geral" active={view.kind === 'home'} onClick={() => openView({ kind: 'home' })} />
+        <NavItem icon={<Users className="size-[18px]" />} label="Amigos" active={view.kind === 'friends'} onClick={() => openView({ kind: 'friends' })} badge={pendingFriends} />
         {claudeVisible ? (
           <>
             <NavItem icon={<ClaudeAvatar size={20} />} label="NEXUS IA" active={view.kind === 'claude'} onClick={() => openView({ kind: 'claude' })} />

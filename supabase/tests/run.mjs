@@ -492,6 +492,42 @@ async function main() {
   ok(one(await service(`select owner_id from public.servers where id = $1`, [S2])).owner_id === B, 'dono transfere o servidor para outro membro');
 
   // ------------------------------------------------------------------
+  console.log('\n• Amigos (adicionar pelo nick) e bloqueio');
+  const G = await mk('gabi@exemplo.com', { username: 'gabi_games', display_name: 'Gabi' });
+  const H = await mk('mari@exemplo.com', { username: 'mari_maricota', display_name: 'Mari' });
+  ok(!!(await denied(G, `select public.open_dm($1)`, [H])), 'sem servidor em comum e sem amizade, não abre conversa');
+  let fr = one(await asUser(G, `select public.send_friend_request($1) as r`, ['  @Mari_Maricota '])).r;
+  ok(fr.ok === true && fr.status === 'enviado' && fr.user_id === H, 'pedido de amizade pelo nick (aceita @, maiúsculas e espaços)', fr);
+  ok(one(await asUser(G, `select public.send_friend_request($1) as r`, ['mari_maricota'])).r.status === 'ja_enviado', 'pedido repetido não duplica');
+  ok(/Ninguém/.test(one(await asUser(G, `select public.send_friend_request($1) as r`, ['nao_existe_ninguem'])).r.reason), 'nick que não existe avisa');
+  ok(/próprio/.test(one(await asUser(G, `select public.send_friend_request($1) as r`, ['gabi_games'])).r.reason), 'não dá para adicionar a si mesmo');
+  const pend = (await asUser(H, `select id, requester from public.friendships where addressee = $1 and status = 'pendente'`, [H])).rows;
+  ok(pend.length === 1 && pend[0].requester === G, 'quem recebeu vê o pedido pendente');
+  ok((await asUser(C, `select 1 from public.friendships where requester = $1`, [G])).rows.length === 0, 'ninguém mais vê os pedidos dos outros');
+  ok((await asUser(H, `select 1 from public.notifications where user_id = $1 and kind = 'friend'`, [H])).rows.length === 1, 'aviso de pedido de amizade');
+  ok(!!(await denied(G, `select public.respond_friend_request($1, true)`, [pend[0].id])), 'quem mandou não aceita o próprio pedido');
+  ok(!!(await denied(C, `insert into public.friendships (requester, addressee, status) values ($1, $2, 'aceita')`, [C, H])), 'amizade só pelas funções (ninguém se força como amigo)');
+  await asUser(H, `select public.respond_friend_request($1, true)`, [pend[0].id]);
+  ok(one(await asUser(G, `select status from public.friendships where requester = $1 and addressee = $2`, [G, H])).status === 'aceita', 'aceitar vira amizade');
+  ok((await asUser(G, `select 1 from public.notifications where user_id = $1 and kind = 'friend'`, [G])).rows.length === 1, 'quem pediu é avisado que foi aceito');
+  const dmGH = one(await asUser(G, `select public.open_dm($1) as id`, [H])).id;
+  ok(!!dmGH, 'amigos conversam no privado mesmo sem servidor em comum');
+  await asUser(G, `insert into public.messages (dm_thread_id, author_id, content) values ($1, $2, 'oi Mari!')`, [dmGH, G]);
+  ok((await asUser(H, `select 1 from public.messages where dm_thread_id = $1`, [dmGH])).rows.length === 1, 'a mensagem chega para a amiga');
+
+  await asUser(H, `select public.block_user($1)`, [G]);
+  ok((await asUser(G, `select 1 from public.friendships where requester = $1 or addressee = $1`, [G])).rows.length === 0, 'bloquear desfaz a amizade');
+  ok(!!(await denied(G, `insert into public.messages (dm_thread_id, author_id, content) values ($1, $2, 'oi?')`, [dmGH, G])), 'bloqueado não manda mensagem no privado');
+  ok(!!(await denied(H, `insert into public.messages (dm_thread_id, author_id, content) values ($1, $2, 'oi?')`, [dmGH, H])), 'quem bloqueou também não manda (até desbloquear)');
+  ok(/Não foi possível/.test(one(await asUser(G, `select public.send_friend_request($1) as r`, ['mari_maricota'])).r.reason), 'bloqueado não manda pedido (sem revelar o bloqueio)');
+  ok((await asUser(G, `select 1 from public.user_blocks`)).rows.length === 0 && (await asUser(H, `select 1 from public.user_blocks`)).rows.length === 1, 'só quem bloqueou vê o bloqueio');
+  await asUser(H, `select public.unblock_user($1)`, [G]);
+  ok(one(await asUser(H, `select public.send_friend_request($1) as r`, ['gabi_games'])).r.status === 'enviado', 'desbloqueado: pedidos voltam a funcionar');
+  ok(one(await asUser(G, `select public.send_friend_request($1) as r`, ['mari_maricota'])).r.status === 'aceito', 'se os dois pedem, vira amizade na hora');
+  await asUser(G, `select public.remove_friend($1)`, [H]);
+  ok((await asUser(H, `select 1 from public.friendships where requester = $1 or addressee = $1`, [H])).rows.length === 0, 'desfazer amizade');
+
+  // ------------------------------------------------------------------
   console.log('\n• Moderação e posse');
   await asUser(A, `select public.ban_member($1, $2, 'teste')`, [S, D]);
   ok((await asUser(D, `select 1 from public.servers where id = $1`, [S])).rows.length === 0, 'banido perde o acesso');

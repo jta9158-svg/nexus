@@ -1,6 +1,7 @@
 // Teste VISUAL do app com um servidor Supabase SIMULADO (dados de exemplo só
 // para conferir o layout). Não é usado pelo app real.
-// Uso: npm run build && node tests/visual.mjs [pasta-de-saida]
+// Uso: npx vite build --mode visual && node tests/visual.mjs [pasta-de-saida]
+// (o modo "visual" não lê o .env.production, então o app usa o servidor simulado)
 import { createRequire } from 'node:module';
 import { createServer } from 'node:http';
 import { readFile, mkdir } from 'node:fs/promises';
@@ -164,6 +165,13 @@ function tableData(table, params, opts = {}) {
       return [{ data: {} }];
     case 'ai_conversations':
       return [];
+    case 'friendships':
+      return [
+        { id: 'f1', requester: MAT, addressee: ME, status: 'aceita', created_at: iso(3000), responded_at: iso(2990) },
+        { id: 'f2', requester: JUR, addressee: ME, status: 'pendente', created_at: iso(30), responded_at: null },
+      ];
+    case 'user_blocks':
+      return [];
     default:
       return [];
   }
@@ -181,6 +189,8 @@ function rpcData(fn, opts) {
       return !!opts.admin;
     case 'mark_read':
       return null;
+    case 'send_friend_request':
+      return { ok: true, status: 'enviado', user_id: MAR };
     case 'preview_invite':
       return [{ server_id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', name: 'Grupo dos Amigos', description: 'Jogos, memes e calls toda sexta.', icon_url: null, banner_url: null, member_count: 12, valid: true, reason: null, requires_pin: true, already_member: false }];
     default:
@@ -189,6 +199,16 @@ function rpcData(fn, opts) {
 }
 
 async function mockSupabase(page, opts = { admin: true }) {
+  // Nunca falar com um servidor de verdade: o build precisa ser o de teste
+  // (npx vite build --mode visual), sem o endereço do .env.production.
+  await page.route(
+    (u) => u.hostname.endsWith('.supabase.co') && u.origin !== SB,
+    async (route) => {
+      console.error(`ERRO: o app tentou acessar um servidor real (${new URL(route.request().url()).hostname}). Gere o build com: npx vite build --mode visual`);
+      process.exitCode = 1;
+      await route.abort();
+    },
+  );
   await page.route(`${SB}/**`, async (route) => {
     const req = route.request();
     const url = new URL(req.url());
@@ -296,11 +316,40 @@ for (const s of shots) {
     await page.getByRole('button', { name: 'Início e mensagens privadas' }).click();
     await page.waitForTimeout(1200);
     await page.screenshot({ path: join(out, 'desktop-inicio.png') });
+    // Amigos: lista, pedidos pendentes, adicionar pelo nick e perfil com "Aceitar"
+    await page.getByRole('button', { name: /^Amigos/ }).first().click();
+    await page.waitForTimeout(900);
+    await page.screenshot({ path: join(out, 'desktop-amigos.png') });
+    await page.getByRole('tab', { name: /Pendentes/ }).or(page.getByRole('button', { name: /^Pendentes/ })).first().click();
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: join(out, 'desktop-amigos-pendentes.png') });
+    await page.getByRole('button', { name: /Jurassic/ }).first().click();
+    await page.waitForTimeout(800);
+    await page.screenshot({ path: join(out, 'desktop-perfil-pedido.png') });
+    const acceptBtn = await page.getByRole('button', { name: 'Aceitar' }).count();
+    await page.keyboard.press('Escape');
+    await page.getByRole('tab', { name: 'Adicionar amigo' }).or(page.getByRole('button', { name: 'Adicionar amigo' })).first().click();
+    await page.waitForTimeout(400);
+    await page.getByLabel('Nome de usuário').fill('marina');
+    await page.getByRole('button', { name: 'Enviar pedido de amizade' }).click();
+    await page.waitForTimeout(900);
+    await page.screenshot({ path: join(out, 'desktop-amigos-adicionar.png') });
+    const sent = await page.getByText(/Pedido enviado para @marina/).count();
+    console.log(`amigos: pedido pelo nick ${sent ? 'enviado' : 'NÃO enviado'} · botão Aceitar no perfil ${acceptBtn ? 'visível' : 'NÃO visível'}`);
   }
   if (name === 'iphone-chat') {
     await page.getByRole('button', { name: 'Abrir menu' }).first().click();
     await page.waitForTimeout(600);
     await page.screenshot({ path: join(out, 'iphone-menu.png') });
+    await page.getByRole('button', { name: 'Início e mensagens privadas' }).first().click().catch(() => {});
+    await page.waitForTimeout(600);
+    if (!(await page.getByRole('button', { name: /^Amigos/ }).first().isVisible())) {
+      await page.getByRole('button', { name: 'Abrir menu' }).first().click();
+      await page.waitForTimeout(600);
+    }
+    await page.getByRole('button', { name: /^Amigos/ }).first().click();
+    await page.waitForTimeout(900);
+    await page.screenshot({ path: join(out, 'iphone-amigos.png') });
   }
   console.log(`${name}: ${errors.length ? 'ERROS: ' + errors.join(' | ') : 'ok'}`);
   await ctx.close();

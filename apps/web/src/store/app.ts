@@ -30,7 +30,8 @@ export type View =
   | { kind: 'projects'; serverId: string; projectId?: string | null }
   | { kind: 'finance'; serverId: string }
   | { kind: 'files'; serverId: string }
-  | { kind: 'discover' };
+  | { kind: 'discover' }
+  | { kind: 'friends' };
 
 export type ModalState =
   | { kind: 'createServer' }

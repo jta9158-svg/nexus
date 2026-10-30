@@ -5,6 +5,7 @@ import { sb } from './supabase';
 import { emitTable } from './bus';
 import { playPing, setAppBadge, showSystemNotification } from './notify';
 import { platformLabel } from './platform';
+import { useFriends } from '../store/friends';
 import { useApp } from '../store/app';
 import { useMessages } from '../store/messages';
 import type { Channel, ChannelCategory, Member, MemberRole, Message, NotificationRow, PresenceState, Role, Server } from '../types/db';
@@ -89,6 +90,7 @@ function onNotification(raw: Record<string, unknown>) {
       if (n.link.dm_thread_id) app.openDm(n.link.dm_thread_id);
       else if (n.link.server_id && n.link.channel_id) app.openChannel(n.link.server_id, n.link.channel_id);
       else if (n.link.task_id) app.openView({ kind: 'companion' });
+      else if (n.link.friends) app.openView({ kind: 'friends' });
     });
   }
 }
@@ -278,6 +280,12 @@ export function startRealtime(userId: string): void {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'companion_tasks', filter: `owner_id=eq.${userId}` }, (p) =>
       emitTable('companion_tasks', { eventType: p.eventType, new: p.new as Record<string, unknown>, old: p.old as Record<string, unknown> }),
     )
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'friendships', filter: `addressee=eq.${userId}` }, () => {
+      void useFriends.getState().load();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'friendships', filter: `requester=eq.${userId}` }, () => {
+      void useFriends.getState().load();
+    })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'companion_questions', filter: `owner_id=eq.${userId}` }, (p) =>
       emitTable('companion_questions', { eventType: p.eventType, new: p.new as Record<string, unknown>, old: p.old as Record<string, unknown> }),
     )

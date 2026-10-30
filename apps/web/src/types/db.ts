@@ -174,7 +174,7 @@ export interface DmThread {
 export interface NotificationRow {
   id: string;
   user_id: string;
-  kind: 'mention' | 'dm' | 'invite' | 'task' | 'question' | 'claude' | 'system';
+  kind: 'mention' | 'dm' | 'invite' | 'task' | 'question' | 'claude' | 'system' | 'friend';
   title: string;
   body: string | null;
   link: {
@@ -184,6 +184,8 @@ export interface NotificationRow {
     message_id?: string;
     task_id?: string;
     question_id?: string;
+    friends?: boolean;
+    user_id?: string;
   };
   read_at: string | null;
   created_at: string;
@@ -488,4 +490,21 @@ export interface PresenceState {
   };
   device: string;
   at: number;
+}
+
+/** Amizade (como no Discord): pendente até a outra pessoa aceitar. */
+export interface Friendship {
+  id: string;
+  requester: string;
+  addressee: string;
+  status: 'pendente' | 'aceita';
+  created_at: string;
+  responded_at: string | null;
+}
+
+export interface FriendRequestResult {
+  ok: boolean;
+  status?: 'enviado' | 'aceito' | 'ja_amigos' | 'ja_enviado';
+  user_id?: string;
+  reason?: string;
 }
