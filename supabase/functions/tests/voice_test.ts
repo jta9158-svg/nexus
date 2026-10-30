@@ -10,6 +10,10 @@ Deno.test('reconhece quando chamam a IA pelo nome (NEXUS IA ou Claude)', () => {
   assert(isAddressed('Néxus, IA, tá aí?'));
   assert(!isAddressed('abre o NEXUS no celular'), 'falar do app não chama a IA');
   assert(!isAddressed('vou mandar no nexus'));
+  assert(isAddressed('Nexus, qual é o status do ALPHA?'), 'Nexus no começo da fala chama');
+  assert(isAddressed('Ei, Nexus, me ajuda'));
+  assert(isAddressed('nexus aí, tá ouvindo?'));
+  assert(!isAddressed('Nexusfan entrou no servidor'));
   assert(isAddressed('ô Cláude, me ajuda'));
   assert(isAddressed('e aí clóde'));
   assertFalse(isAddressed('o Cláudio vai fazer o mapa'));

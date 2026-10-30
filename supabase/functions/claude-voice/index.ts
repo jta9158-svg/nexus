@@ -63,6 +63,39 @@ async function activeSession(admin: Admin, channelId: string) {
   return data;
 }
 
+// ---------------------------------------------------------------- situação da IA
+type AiStatus = { status: 'ok' | 'sem_creditos' | 'erro'; message: string | null; checked_at: string };
+
+/** Verifica de verdade se a API do Claude responde (1 token, Haiku) e guarda o resultado.
+ *  Usa o resultado guardado por 10 min quando está ok, ou por 1 min quando há problema. */
+async function aiStatus(admin: ReturnType<typeof adminClient>, force = false): Promise<AiStatus> {
+  const { data: s } = await admin.from('app_settings').select('ai_status, ai_status_message, ai_checked_at').single();
+  if (!force && s?.ai_status && s.ai_checked_at) {
+    const age = Date.now() - new Date(s.ai_checked_at).getTime();
+    if (age < (s.ai_status === 'ok' ? 10 : 1) * 60_000) return { status: s.ai_status, message: s.ai_status_message, checked_at: s.ai_checked_at };
+  }
+  let status: AiStatus['status'] = 'ok';
+  let message: string | null = null;
+  try {
+    apiKey();
+    await createMessage({ model: 'claude-haiku-5-5', max_tokens: 1, messages: [{ role: 'user', content: 'ok' }] });
+  } catch (err) {
+    message = (err instanceof HttpError ? err.message : String(err)).slice(0, 500);
+    status = /sem créditos/i.test(message) ? 'sem_creditos' : 'erro';
+  }
+  const checked_at = new Date().toISOString();
+  await admin.from('app_settings').update({ ai_status: status, ai_status_message: message, ai_checked_at: checked_at }).eq('id', true);
+  return { status, message, checked_at };
+}
+
+async function status(req: Request, force: boolean) {
+  const { user } = await requireUser(req);
+  const admin = adminClient();
+  const { data: isAdmin } = await admin.from('app_admins').select('user_id').eq('user_id', user.id).maybeSingle();
+  if (!isAdmin) throw new HttpError(403, 'Somente o administrador do NEXUS.');
+  return json(await aiStatus(admin, force));
+}
+
 // ---------------------------------------------------------------- convite
 async function invite(req: Request, channelId: string) {
   const { user } = await requireUser(req);
@@ -73,6 +106,14 @@ async function invite(req: Request, channelId: string) {
   if (!quota?.allowed) throw new HttpError(403, quota?.reason ?? 'Sem cota da NEXUS IA.');
   lkEnv();
   apiKey();
+  // Sem créditos a IA entraria muda: avisa na hora em vez de chamar.
+  const ai = await aiStatus(admin);
+  if (ai.status === 'sem_creditos') {
+    throw new HttpError(
+      402,
+      'A NEXUS IA ainda não pode falar: a conta da API do Claude está sem créditos. Vincule os créditos do plano Max (claude.ai → Configurações → Cobrança) e chame de novo.',
+    );
+  }
 
   const existing = await activeSession(admin, channelId);
   if (existing) return json({ status: 'ja_na_call', session_id: existing.id });
@@ -412,6 +453,8 @@ Deno.serve(async (req) => {
         return await reply(req, body as ReplyBody);
       case 'event':
         return await event(req, body as { session_id: string; event: string; detail?: string });
+      case 'status':
+        return await status(req, !!body.force);
       case 'health': {
         // Verificação do servidor (só com o segredo interno): a chave do Claude funciona?
         if (!isInternal(req)) throw new HttpError(401, 'Somente o servidor do NEXUS.');

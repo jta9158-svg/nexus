@@ -7,10 +7,14 @@ export const SILENCE = '[SILENCIO]';
 /** Como chamar a IA na call: "NEXUS IA" (o nome do app sozinho NÃO chama, para não
  *  disparar quando falam do aplicativo) ou "Claude", do jeito que a transcrição em
  *  português costuma escrever. ("Cláudio" e "cloud" ficam de fora.) */
-const WAKE = /(^|[^\p{L}])(claude|cl[aá]ude|cl[oóô]u?de|n[eé]x(?:us|os|o)[\s,.-]*i\.?\s?[aá]\.?)(?![\p{L}])/iu;
+const WAKE = /(^|[^\p{L}])(claude|cl[aá]ude|cl[oóô]u?de|n[eé]x(?:us|os|o)[\s,.-]*(?:i\.?\s?[aá]\.?|a[ií]))(?![\p{L}])/iu;
+/** "Nexus" sozinho chama só no começo da fala ("Nexus, qual é..."), para não disparar
+ *  quando falam do aplicativo no meio da conversa. */
+const WAKE_START = /^[^\p{L}]*(?:(?:ei|oi|olá|ô|ó)[^\p{L}]+)?n[eé]x(?:us|os)(?![\p{L}])/iu;
 
 export function isAddressed(text: string): boolean {
-  return WAKE.test(text.normalize('NFC'));
+  const t = text.normalize('NFC');
+  return WAKE.test(t) || WAKE_START.test(t);
 }
 
 export type VoiceMode = 'quando_chamado' | 'participante_ativo' | 'segundo_plano' | 'hibrido';

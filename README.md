@@ -4,7 +4,7 @@ Central da equipe do **ALPHA — Templo da Magia** (e de outros jogos): chat e c
 
 Funciona no **Windows** (app instalável), no **navegador** e como app no **iPhone, iPad e Android**.
 
-## O que já está pronto (versão 0.1.3)
+## O que já está pronto (versão 0.1.4)
 
 | Área | Situação |
 |---|---|

@@ -17,7 +17,7 @@ import {
 import { useApp, displayNameFor } from '../../store/app';
 import { useClaudeVisible, useSession } from '../../store/session';
 import { useCompanion } from '../../store/companion';
-import { sb, currentConfig } from '../../lib/supabase';
+import { callFunction, sb, currentConfig } from '../../lib/supabase';
 import { onConnectionChange } from '../../lib/realtime';
 import { desktop, isDesktop } from '../../lib/platform';
 import { formatRelative } from '../../lib/format';
@@ -106,6 +106,14 @@ export function OverviewView() {
 
   const claudeVisible = useClaudeVisible();
   const members = useApp((s) => s.members);
+  // Situação real da API do Claude (não só a permissão): ok, sem créditos ou erro.
+  const [ai, setAi] = useState<{ status: 'ok' | 'sem_creditos' | 'erro'; message: string | null } | null>(null);
+  useEffect(() => {
+    if (!claudeVisible) return;
+    void callFunction<{ status: 'ok' | 'sem_creditos' | 'erro'; message: string | null }>('claude-voice', { action: 'status' })
+      .then(setAi)
+      .catch(() => setAi(null));
+  }, [claudeVisible]);
   const show = (w: Widget) => !hidden.includes(w) && (claudeVisible || (w !== 'duvidas' && w !== 'tarefas'));
   const pendingQ = companion.questions.filter((q) => q.status === 'pendente');
   const activeTasks = companion.tasks.filter((t) => ['executando', 'aguardando', 'aguardando_confirmacao', 'bloqueada'].includes(t.status));
@@ -288,7 +296,21 @@ export function OverviewView() {
                   <ul className="space-y-2 text-sm">
                     <Integration ok label="Servidor NEXUS (Supabase)" detail={cfg ? new URL(cfg.supabaseUrl).host : '—'} />
                     <Integration ok={realtimeOk} label="Tempo real" detail={realtimeOk ? 'Conectado' : 'Reconectando…'} />
-                    <Integration ok={!!quota?.allowed} label="NEXUS IA (API da Anthropic)" detail={quota?.allowed ? 'Liberada' : quota?.reason ?? 'Sem acesso'} />
+                    <Integration
+                      ok={ai ? ai.status === 'ok' : quota?.allowed ? null : false}
+                      label="NEXUS IA (API do Claude)"
+                      detail={
+                        ai?.status === 'ok'
+                          ? 'Respondendo'
+                          : ai?.status === 'sem_creditos'
+                            ? 'Sem créditos na API — vincule os créditos do plano Max'
+                            : ai?.status === 'erro'
+                              ? ai.message ?? 'Com problema agora'
+                              : quota?.allowed
+                                ? 'Verificando…'
+                                : quota?.reason ?? 'Sem acesso'
+                      }
+                    />
                     <Integration ok={null} label="Calls (LiveKit)" detail="Verificado ao entrar em uma call" />
                     <Integration ok={players.length > 0 ? true : null} label="Roblox (dados públicos)" detail={players.length ? `${players.length} jogo(s)` : 'Nenhum jogo vinculado'} />
                     <Integration ok={false} label="Roblox (receita)" detail="Requer OAuth oficial — próxima fase" />

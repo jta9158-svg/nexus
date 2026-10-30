@@ -9,7 +9,10 @@ import re
 
 # "Claude" do jeito que a transcrição em português costuma escrever.
 # "Cláudio" e "cloud" ficam de fora para não confundir com nomes e termos comuns.
-_WAKE = re.compile(r"(?<!\w)(claude|cl[aá]ude|cl[oóô]u?de|n[eé]x(?:us|os|o)[\s,.-]*i\.?\s?[aá]\.?)(?!\w)", re.IGNORECASE)
+_WAKE = re.compile(r"(?<!\w)(claude|cl[aá]ude|cl[oóô]u?de|n[eé]x(?:us|os|o)[\s,.-]*(?:i\.?\s?[aá]\.?|a[ií]))(?!\w)", re.IGNORECASE)
+# "Nexus" sozinho chama só no começo da fala ("Nexus, qual é..."), para não
+# disparar quando falam do aplicativo no meio da conversa.
+_WAKE_START = re.compile(r"^\W*(?:(?:ei|oi|olá|ô|ó)\W+)?n[eé]x(?:us|os)(?!\w)", re.IGNORECASE)
 
 MODES = ("quando_chamado", "participante_ativo", "segundo_plano", "hibrido")
 
@@ -18,7 +21,8 @@ GOODBYE_PAUSED = "Pausei a escuta. Quando quiserem, é só me liberar de novo."
 
 
 def is_addressed(text: str | None) -> bool:
-    return bool(_WAKE.search(text or ""))
+    t = text or ""
+    return bool(_WAKE.search(t) or _WAKE_START.search(t))
 
 
 def should_consider(mode: str | None, addressed: bool) -> str:

@@ -1,6 +1,6 @@
 # Testes do NEXUS
 
-Situação em **30/10/2026**, versão **0.1.3**. Tudo abaixo foi executado de verdade; o que ainda não pôde ser testado está marcado como **pendente**, com o motivo.
+Situação em **30/10/2026**, versão **0.1.4**. Tudo abaixo foi executado de verdade; o que ainda não pôde ser testado está marcado como **pendente**, com o motivo.
 
 ## 1. Testes automáticos
 
@@ -90,5 +90,5 @@ Depois de configurar Supabase, LiveKit e a chave do Claude (`CONFIGURACAO.md`):
 | Página de download | ✅ no ar; os botões levam ao instalador do Windows e ao APK da versão mais recente |
 | Servidor principal com link + PIN | ✅ PIN ligado e link de convite permanente criado (o PIN fica só nas configurações do servidor, nunca no repositório) · **pendente** alguém da equipe entrar de outro aparelho |
 | 4–5. Claude (API) | 🟡 a chave é válida (a API responde), mas a conta da API está **sem créditos**. Os créditos mensais do Max só podem ser vinculados depois de 7 dias de plano. Enquanto isso, o app mostra “A conta da API do Claude está sem créditos…” em vez de falhar em silêncio |
-| Claude na call | ✅ o agente entrou numa sala de teste e ficou “ouvindo”, sem erros · **pendente** a conversa real (créditos) |
+| NEXUS IA na call | ✅ entra na call e transcreve as falas (registros da LiveKit, 30/10) · sem créditos na API ela não consegue pensar: agora o app avisa isso na hora de chamar, em vez de a IA entrar muda · **pendente** a conversa real (créditos do Max) |
 | 2, 3, 6, 7, 8 | **pendentes** |

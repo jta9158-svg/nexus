@@ -185,6 +185,11 @@ class NexusClaude(Agent):
         speaker_id, speaker_name = self._speaker()
         addressed = is_addressed(text)
         decision = should_consider(self.brain.mode, addressed)
+        # Só metadados (nada do conteúdo da conversa vai para os registros).
+        log.info(
+            "fala recebida",
+            extra={"chamou": addressed, "decisao": decision, "letras": len(text), "pausado": self.brain.paused, "mudo": self.brain.muted},
+        )
         prior = list(self.brain.history)
         self.brain.history.append({"role": "user", "speaker": speaker_name, "text": text})
         if self.brain.paused or self.brain.muted or decision == "ignorar" or not speaker_id:
@@ -242,7 +247,7 @@ async def entrypoint(ctx: JobContext) -> None:
             fallback=[voice["fallback"]],
         ),
         turn_handling={
-            "endpointing": {"min_delay": 0.6},
+            "endpointing": {"min_delay": 1.0},
             "interruption": {"enabled": True, "min_duration": 0.4},
         },
         user_away_timeout=None,
