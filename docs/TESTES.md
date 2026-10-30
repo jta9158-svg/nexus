@@ -6,8 +6,10 @@ Situação em **29/10/2026**, versão **0.1.0**. Tudo abaixo foi executado de ve
 
 | Conjunto | Como rodar | Resultado |
 |---|---|---|
-| Banco e regras de acesso (PostgreSQL 18 via PGlite, imitando o Supabase: Auth, Storage, Realtime) | `cd supabase/tests && npm install && npm test` | **114 passaram, 0 falharam** |
-| Funções do servidor (Deno): cliente da API do Claude contra um servidor falso no formato oficial (streaming, `tool_use`, erro de crédito, custo), token do LiveKit (HS256), instruções dos modos do Companion | `deno test --allow-net --allow-env supabase/functions/tests/` | **8 passaram, 0 falharam** |
+| Banco e regras de acesso (PostgreSQL 18 via PGlite, imitando o Supabase: Auth, Storage, Realtime) | `cd supabase/tests && npm install && npm test` | **131 passaram, 0 falharam** |
+| Funções do servidor (Deno): cliente da API do Claude contra um servidor falso no formato oficial (streaming, `tool_use`, erro de crédito, custo), token do LiveKit (HS256), modos do Companion, regras de voz (nome “Claude”, silêncio, histórico, token de servidor) | `deno test --allow-net --allow-env supabase/functions/tests/` | **14 passaram, 0 falharam** |
+| Agente de voz (Python): regras (chamado pelo nome, modos, vozes, troca de quem fala, comandos) e o agente em modo texto contra um servidor falso (responde quando chamado, não interrompe conversa, pausado/silenciado, histórico) | `cd apps/voice-agent && pip install -r requirements.txt && python -m unittest discover -s tests` | **11 passaram, 0 falharam** |
+| Agente publicado na LiveKit Cloud | logs da LiveKit + despacho de teste para uma sala | trabalhador `nexus-claude` registrado; entrou na sala de teste, estado “ouvindo”, sem erros |
 | Checagem de tipos das 5 funções | `deno check supabase/functions/*/index.ts` | sem erros |
 | Checagem de tipos e build do app | `cd apps/web && npm run build` | sem erros |
 | Visual com servidor **simulado** (dados de exemplo só no teste): PC 1536 px, iPad, iPhone, Android; telas de login com a dica de instalação, inclusive iPad que se identifica como Mac | `node apps/web/tests/visual.mjs` | 8 telas, sem erros de JavaScript |
@@ -38,15 +40,15 @@ Situação em **29/10/2026**, versão **0.1.0**. Tudo abaixo foi executado de ve
 | Teste | O que já foi verificado | Situação |
 |---|---|---|
 | **A — Resposta direcionada** (“Claude, qual é o status do ALPHA?”) | @Claude é detectado no banco; a função `claude-channel` monta o contexto (30 últimas mensagens, tarefas do projeto, métricas com origem) consultando com a identidade de quem perguntou e instrui a nunca inventar; o cliente da API foi testado contra o servidor falso | **pendente** o teste com a chave real da API |
-| **B — Conversa sem participação** | Nos canais de texto o Claude só é acionado por mensagem com @Claude (o app só chama a função nesse caso, e a função recusa mensagens sem a menção) | texto ✅ · **voz pendente** (fase 5) |
+| **B — Conversa sem participação** | Texto: só responde a @Claude. Voz: só responde quando ouve “Claude” (exceto “Participante ativo”, que decide e pode ficar em silêncio) — testado no agente em modo texto e nas regras | ✅ |
 | **C — Trabalho em segundo plano** | Tarefas rodam no servidor, salvam o estado a cada passo e continuam com o app fechado; estados e transições testados no banco | **pendente** a execução real (chave da API) |
-| **D — Voz durante tarefa** | Arquitetura separa voz e tarefas (`docs/ARQUITETURA.md`) | **pendente** (fase 5) |
+| **D — Voz durante tarefa** | Voz (agente na LiveKit) e tarefas (servidor) são processos separados; o Claude na call lê o andamento das tarefas de quem o chamou | implementado · **pendente** o teste real |
 | **E — Dúvida bloqueante** | Testado no banco: a pergunta pausa só a tarefa afetada, vira notificação, só a dona responde, e a tarefa volta para a fila e é retomada | ✅ no banco · **pendente** com o Claude real |
-| **F — Interrupção da fala** | — | **pendente** (fase 5) |
+| **F — Interrupção da fala** | Interrupção ligada (a fala do Claude para quando alguém fala); “Silenciar” e “Pausar escuta” na call; tarefas nunca são canceladas pela voz | implementado · **pendente** o teste real |
 | **G — Permissões** | Testado no banco: permissão não concedida continua negada, só muda pela função registrada, ninguém vê as permissões de outra pessoa; o executor registra “Permissão negada” no histórico e avisa o Claude | ✅ |
 | **H — Concorrência** | Testado no banco: duas tarefas no mesmo arquivo nunca rodam juntas (a segunda espera e informa o motivo), limite de tarefas simultâneas por pessoa, e a da fila começa quando o recurso é liberado | ✅ |
 | **I — Falhas de conexão** | O cliente da API tenta de novo (3 vezes) em sobrecarga/limite; se falhar, a tarefa fica como **falhou** com a mensagem — nunca como concluída — e pode ser repetida; execução que parou de responder é retomada do último estado salvo | ✅ no código e no teste do cliente · **pendente** a simulação com o serviço real |
-| **J — Privacidade** | Testado no banco: tarefas, dúvidas, permissões e registros são privados; finanças e arquivos privados escondidos de usuários comuns; presença das calls só para membros | ✅ dados · **voz pendente** (não ouvir salas não autorizadas — fase 5) |
+| **J — Privacidade** | Testado no banco: tarefas, dúvidas, permissões e registros são privados; finanças e arquivos privados escondidos; presença das calls só para membros; o Claude só entra numa call quando alguém com cargo e permissões “Ouvir/Falar” chama; quem não é membro não chama nem vê; finanças nunca são faladas na call; contexto só com o que **todos** na call podem ver; nada é gravado | ✅ |
 | **K — Teste com equipe** | — | **pendente**: precisa do servidor publicado e de computadores diferentes |
 
 Modos (seção 5.2) — testado no banco: em “Trabalhador em segundo plano” a dúvida que não bloqueia vai para as pendências sem notificar e não pausa a tarefa; a bloqueante notifica; em “Híbrido” a dúvida média notifica. Modo inválido é recusado.

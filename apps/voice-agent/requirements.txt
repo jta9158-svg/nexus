@@ -1,0 +1,3 @@
+# Agente de voz do NEXUS (roda na LiveKit Cloud)
+livekit-agents[silero]==1.8.10
+aiohttp>=3.10

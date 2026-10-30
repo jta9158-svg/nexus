@@ -8,7 +8,7 @@ Fases da especificação (seção 11) e onde cada uma está. ✅ pronto e testad
 | 2 — Base do NEXUS (interface, navegação, login, backend, banco) | 🟡 | publicar o backend (Supabase) e testar login/recuperação no servidor real |
 | 3 — Comunicação (DMs, servidores, canais, calls, tela) | 🟡 | criar o projeto no LiveKit e testar calls entre computadores |
 | 4 — Claude AI (conversas, contexto por projeto, ferramentas) | 🟡 | chave da API e teste real |
-| 5 — Claude Companion | 🟡 | **texto e tarefas prontos** (modos, tarefas em segundo plano, dúvidas, permissões, logs). Falta: **voz nas calls** (agente LiveKit + transcrição + voz), testes A–K com o Claude real |
+| 5 — Claude Companion | 🟡 | texto, tarefas e **voz nas calls** prontos (agente na LiveKit Cloud: transcrição Deepgram, voz Cartesia/Inworld, interrupção, modos, pausar/silenciar/tirar). Falta: testes A–K com o Claude real (créditos da API) e com a equipe |
 | 6 — Roblox e finanças | 🟡 | métricas públicas com gráfico, lançamentos financeiros e exportação CSV prontos. Falta: **receita oficial** (Analytics Query API, `ROBLOX.md`) e relatório financeiro mensal |
 | 7 — Desenvolvimento e organização | 🟡 | projetos, tarefas, bugs, versões do projeto, histórico e arquivos prontos. Falta: **versões de arquivos na tela** (o banco já guarda), comparar versões, **ponto de restauração** e **backups** testados |
 | 8 — Distribuição | 🟡 | instalador, APK, PWA e página de download prontos. Falta: repositório no GitHub, publicar a página, instalar em um Windows limpo, validar o download |

@@ -8,7 +8,7 @@
 // quando esta função despacha ele. A chave da Anthropic fica só aqui no servidor.
 import { env, handleError, HttpError, json, preflight, readJson, runInBackground } from '../_shared/http.ts';
 import { adminClient, isInternal, requireUser, rpc } from '../_shared/supabase.ts';
-import { apiKey, estimateCost, streamMessage } from '../_shared/anthropic.ts';
+import { apiKey, createMessage, estimateCost, streamMessage } from '../_shared/anthropic.ts';
 import { nowBrasilia } from '../_shared/context.ts';
 import {
   AGENT_NAME,
@@ -268,7 +268,13 @@ function textStream(produce: (push: (s: string) => void) => Promise<void>): Resp
         await produce((s) => controller.enqueue(encoder.encode(s)));
       } catch (err) {
         console.error('[voice] resposta', err);
-        controller.enqueue(encoder.encode(' Desculpa, tive um problema para responder agora.'));
+        const msg = err instanceof Error ? err.message : '';
+        const spoken = /cr[eé]dito/i.test(msg)
+          ? ' Ainda não consigo pensar aqui: a conta da API do Claude está sem créditos. O administrador precisa ativar os créditos do plano Max.'
+          : /sobrecarregado|limite de uso/i.test(msg)
+            ? ' O Claude está ocupado agora. Tenta de novo em alguns segundos.'
+            : ' Desculpa, tive um problema para responder agora.';
+        controller.enqueue(encoder.encode(spoken));
       } finally {
         controller.close();
       }
@@ -406,6 +412,13 @@ Deno.serve(async (req) => {
         return await reply(req, body as ReplyBody);
       case 'event':
         return await event(req, body as { session_id: string; event: string; detail?: string });
+      case 'health': {
+        // Verificação do servidor (só com o segredo interno): a chave do Claude funciona?
+        if (!isInternal(req)) throw new HttpError(401, 'Somente o servidor do NEXUS.');
+        apiKey();
+        const r = await createMessage({ model: 'claude-haiku-5-5', max_tokens: 5, messages: [{ role: 'user', content: 'Responda só: ok' }] });
+        return json({ ok: true, model: r.model, input_tokens: r.usage.input_tokens, output_tokens: r.usage.output_tokens });
+      }
       default:
         throw new HttpError(400, 'Ação desconhecida.');
     }

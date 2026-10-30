@@ -9,8 +9,9 @@
 | Login | ✅ cadastro por e-mail e senha (mínimo 8 caracteres). **Confirmação de e-mail desligada**: o e-mail padrão do Supabase só entrega para a equipe do projeto (2 por hora). Para a recuperação de senha funcionar para todos, configure um SMTP próprio (passo 1.2) |
 | Funções | ✅ `claude-chat`, `claude-channel`, `livekit-token`, `roblox`, `companion-run` publicadas; segredo `NEXUS_INTERNAL_SECRET` configurado |
 | Coleta do Roblox | ✅ agendada a cada 15 minutos (pg_cron) |
-| Calls (LiveKit) | ⏳ falta criar a conta e colocar os segredos `LIVEKIT_*` (passo 3) |
-| Claude (API) | ⏳ falta a chave `ANTHROPIC_API_KEY` (passo 2) |
+| Calls (LiveKit) | ✅ projeto `alpha` na LiveKit Cloud; segredos `LIVEKIT_*` configurados |
+| Claude na call (voz) | ✅ agente `nexus-claude` publicado na LiveKit Cloud (`tools/deploy-voice-agent.mjs`); serviço de voz ativado |
+| Claude (API) | 🟡 chave `ANTHROPIC_API_KEY` configurada; falta a organização da API ter créditos (vincular os créditos do Max no claude.ai → Settings → Billing → API credits) |
 | Site e instaladores | repositório `jta9158-svg/nexus` no GitHub; site em `https://jta9158-svg.github.io/nexus/` |
 
 Segredos do projeto (só para o dono): <https://supabase.com/dashboard/project/qeugxkmoirqwbmdfwbrt/functions/secrets>

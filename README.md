@@ -10,13 +10,13 @@ Funciona no **Windows** (app instalável), no **navegador** e como app no **iPho
 |---|---|
 | Interface (PC, tablet e celular) | ✅ pronta, igual ao layout de referência; testada em 1536 px, iPad, iPhone e Android |
 | Login, cadastro, recuperação de senha | ✅ implementado (Supabase Auth) — falta testar no servidor real |
-| Servidores, canais, cargos e permissões, convites, banimento | ✅ implementado; **114 testes de acesso passando** (`docs/TESTES.md`) |
+| Servidores, canais, cargos e permissões, convites, banimento | ✅ implementado; **131 testes de acesso passando** (`docs/TESTES.md`) |
 | Chat em tempo real, menções, anexos, busca, não lidas, DMs e grupos | ✅ implementado — falta testar no servidor real |
-| Calls de voz, vídeo e compartilhamento de tela | ✅ implementado (LiveKit) — falta configurar o LiveKit e testar entre computadores |
+| Calls de voz, vídeo e compartilhamento de tela | ✅ no ar (LiveKit Cloud), com qualidade de tela ajustável, volume por pessoa e tela cheia |
 | Claude AI (chat com histórico, imagens, PDF, scripts, contexto do projeto) | ✅ implementado; cliente da API testado — falta a chave da API |
 | @Claude nos canais | ✅ implementado — falta a chave da API |
 | Claude Companion: modos, tarefas em segundo plano, dúvidas, permissões, histórico | ✅ implementado (executor no servidor); regras testadas no banco — falta a chave da API |
-| Claude Companion **por voz nas calls** | ⏳ fase 5 (arquitetura definida em `docs/ARQUITETURA.md`) |
+| Claude Companion **por voz nas calls** | ✅ agente publicado na LiveKit Cloud (`apps/voice-agent`): chamar, pausar escuta, silenciar, tirar; responde quando chamam “Claude” — falta a conversa real (créditos da API) |
 | Projetos, tarefas, bugs, versões, histórico | ✅ implementado |
 | Arquivos (pastas, busca, privados, links, ideias) | ✅ implementado |
 | Finanças (receitas, despesas, recebido × pendente × estimado, taxas, CSV) | ✅ implementado |
@@ -26,7 +26,7 @@ Funciona no **Windows** (app instalável), no **navegador** e como app no **iPho
 | App Android (.apk) | ✅ gerado e verificado (`apps/mobile`) |
 | iPhone/iPad | ✅ instalável pela Tela de Início (PWA) |
 | Página de download que reconhece o aparelho | ✅ pronta (`apps/site`) |
-| Publicação automática (GitHub Actions) | ✅ pronta — falta criar o repositório |
+| Publicação automática (GitHub Actions) | ✅ no ar: https://jta9158-svg.github.io/nexus/ |
 
 Nada aparece como "funcionando" sem estar: integrações sem configuração mostram a limitação na tela (ex.: "Robux recebidos: indisponível sem integração oficial").
 

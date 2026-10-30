@@ -31,3 +31,8 @@ apps/mobile/android/capacitor-cordova-android-plugins/build/
 # supabase local
 supabase/.branches/
 supabase/.temp/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
