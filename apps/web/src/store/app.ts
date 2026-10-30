@@ -93,6 +93,8 @@ interface AppState {
   ensureProfiles: (ids: Array<string | null | undefined>) => Promise<void>;
 
   selectHome: () => void;
+  /** Celular: mostra na gaveta a lista do Início (amigos e conversas privadas), sem trocar a tela. */
+  showHomeList: () => void;
   selectServer: (serverId: string) => Promise<void>;
   openChannel: (serverId: string, channelId: string) => void;
   openDm: (threadId: string) => void;
@@ -339,6 +341,10 @@ export const useApp = create<AppState>((set, get) => ({
   selectHome: () => {
     set({ activeServerId: null, view: { kind: 'home' }, mobileNavOpen: false });
     writeLast(get().lastChannel, null);
+  },
+
+  showHomeList: () => {
+    set({ activeServerId: null, mobileNavOpen: true });
   },
 
   selectServer: async (serverId) => {

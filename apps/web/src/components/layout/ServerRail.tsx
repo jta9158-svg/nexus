@@ -46,23 +46,25 @@ function RailItem({
   );
 }
 
-export function ServerRail({ className }: { className?: string }) {
+export function ServerRail({ className, inDrawer = false }: { className?: string; inDrawer?: boolean }) {
   const servers = useApp((s) => s.servers);
   const active = useApp((s) => s.activeServerId);
-  const view = useApp((s) => s.view);
   const selectServer = useApp((s) => s.selectServer);
   const selectHome = useApp((s) => s.selectHome);
+  const showHomeList = useApp((s) => s.showHomeList);
   const setModal = useApp((s) => s.setModal);
   useApp((s) => s.unread); // re-render quando mudar
   const dmUnread = Object.values(useApp.getState().unread)
     .filter((u) => !u.serverId)
     .reduce((a, b) => a + b.unread, 0);
 
-  const homeActive = active === null && (view.kind === 'home' || view.kind === 'dm' || view.kind === 'claude' || view.kind === 'companion');
+  // Sem servidor escolhido = Início (amigos, conversas privadas, IA).
+  const homeActive = active === null;
 
   return (
     <nav className={cx('w-[72px] shrink-0 flex flex-col items-center gap-2 py-2 overflow-y-auto nx-scroll', className)} aria-label="Servidores">
-      <RailItem active={homeActive} label="Início e mensagens privadas" onClick={selectHome} mentions={dmUnread}>
+      {/* No celular (gaveta) o controle só mostra a lista de conversas privadas; no PC abre o Início. */}
+      <RailItem active={homeActive} label="Início e mensagens privadas" onClick={inDrawer ? showHomeList : selectHome} mentions={dmUnread}>
         <span className={cx('size-full flex items-center justify-center', homeActive ? 'bg-accent text-white' : 'bg-[#1a1f2b] text-fg-2 hover:bg-accent hover:text-white')}>
           <Gamepad2 className="size-6" />
         </span>

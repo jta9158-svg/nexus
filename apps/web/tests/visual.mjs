@@ -341,12 +341,14 @@ for (const s of shots) {
     await page.getByRole('button', { name: 'Abrir menu' }).first().click();
     await page.waitForTimeout(600);
     await page.screenshot({ path: join(out, 'iphone-menu.png') });
-    await page.getByRole('button', { name: 'Início e mensagens privadas' }).first().click().catch(() => {});
+    // Celular: sem "Início" na barra de baixo; o controle mostra as conversas privadas na própria gaveta
+    const inicioTab = await page.getByRole('navigation', { name: 'Navegação principal' }).getByRole('button', { name: 'Início' }).count();
+    await page.getByRole('button', { name: 'Início e mensagens privadas' }).first().click();
     await page.waitForTimeout(600);
-    if (!(await page.getByRole('button', { name: /^Amigos/ }).first().isVisible())) {
-      await page.getByRole('button', { name: 'Abrir menu' }).first().click();
-      await page.waitForTimeout(600);
-    }
+    await page.screenshot({ path: join(out, 'iphone-controle-privado.png') });
+    const dmList = await page.getByRole('dialog', { name: 'Menu' }).getByText('Mensagens privadas').isVisible();
+    const overview = await page.getByRole('button', { name: 'Visão geral' }).count();
+    console.log(`celular: aba Início ${inicioTab ? 'VISÍVEL (erro)' : 'removida'} · controle mostra conversas privadas ${dmList ? 'sim' : 'NÃO'} · Visão geral ${overview ? 'VISÍVEL (erro)' : 'escondida'}`);
     await page.getByRole('button', { name: /^Amigos/ }).first().click();
     await page.waitForTimeout(900);
     await page.screenshot({ path: join(out, 'iphone-amigos.png') });

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Bell, Download, Home, MessageCircle, RefreshCw, Share, Sparkles, UserRound, WifiOff, X } from 'lucide-react';
+import { Bell, Download, Home, RefreshCw, Share, Sparkles, UserRound, WifiOff, X } from 'lucide-react';
 import { useApp } from '../../store/app';
 import { useSession } from '../../store/session';
 import { useToasts } from '../../store/toast';
@@ -36,10 +36,13 @@ import { useClaudeVisible } from '../../store/session';
 function MainView() {
   const view = useApp((s) => s.view);
   const claudeVisible = useClaudeVisible();
-  if ((view.kind === 'claude' || view.kind === 'companion') && !claudeVisible) return <OverviewView />;
+  const isMobile = useIsMobile();
+  // No celular não existe a "Visão geral": o Início é a parte de amigos e conversas privadas.
+  const home = isMobile ? <FriendsView /> : <OverviewView />;
+  if ((view.kind === 'claude' || view.kind === 'companion') && !claudeVisible) return home;
   switch (view.kind) {
     case 'home':
-      return <OverviewView />;
+      return home;
     case 'channel':
       return <ChannelView serverId={view.serverId} channelId={view.channelId} />;
     case 'dm':
@@ -228,7 +231,6 @@ function UpdateBanner() {
 function MobileTabBar() {
   const view = useApp((s) => s.view);
   const setMobileNav = useApp((s) => s.setMobileNav);
-  const selectHome = useApp((s) => s.selectHome);
   const openView = useApp((s) => s.openView);
   const setNotif = useApp((s) => s.setNotificationsOpen);
   const setModal = useApp((s) => s.setModal);
@@ -246,7 +248,6 @@ function MobileTabBar() {
     <nav className="md:hidden shrink-0 border-t border-line-soft bg-panel nx-safe-bottom" aria-label="Navegação principal">
       <div className="h-[58px] flex">
         {item(false, 'Servidores', <Home className="size-5" />, () => setMobileNav(true))}
-        {item(view.kind === 'dm' || view.kind === 'home', 'Início', <MessageCircle className="size-5" />, () => selectHome())}
         {claudeVisible ? item(view.kind === 'claude' || view.kind === 'companion', 'NEXUS IA', <Sparkles className="size-5" />, () => openView({ kind: 'claude' })) : null}
         {item(false, 'Avisos', <Bell className="size-5" />, () => setNotif(true), unread)}
         {item(false, 'Você', me ? <UserRound className="size-5" /> : <UserRound className="size-5" />, () => setModal({ kind: 'settings' }))}
@@ -303,7 +304,7 @@ export function AppShell() {
         <div className="md:hidden fixed inset-0 z-40 flex animate-fade-in" role="dialog" aria-label="Menu">
           <div className="absolute inset-0 bg-black/60" onClick={() => setMobileNav(false)} />
           <div className="relative flex h-full max-w-[92vw] bg-ink nx-safe-top nx-safe-bottom shadow-2xl">
-            <ServerRail className="flex" />
+            <ServerRail className="flex" inDrawer />
             <div className="w-[min(300px,calc(92vw-72px))] flex flex-col bg-panel rounded-tl-2xl overflow-hidden">{sidebar}</div>
           </div>
         </div>

@@ -34,6 +34,7 @@ import { toast } from '../../store/toast';
 import { sb } from '../../lib/supabase';
 import { hasPerm } from '../../lib/permissions';
 import { groupChannels, moveCategory, moveChannel, type LayoutChange } from '../../lib/layout';
+import { useIsMobile } from '../../lib/useMedia';
 import type { Channel, ChannelCategory, PresenceState } from '../../types/db';
 import { Avatar, ClaudeAvatar, CountBadge, cx, IconButton } from '../ui';
 import { ServerBanner } from './ServerArt';
@@ -622,6 +623,7 @@ export function HomeSidebar() {
   const me = useSession((s) => s.userId);
   const claudeVisible = useClaudeVisible();
   const pendingFriends = useFriends((s) => s.rows.filter((r) => r.status === 'pendente' && r.addressee === me).length);
+  const isMobile = useIsMobile();
 
   const onlineIds = new Set<string>();
   for (const map of Object.values(presence)) for (const id of Object.keys(map)) onlineIds.add(id);
@@ -632,7 +634,7 @@ export function HomeSidebar() {
         <span className="text-[15px] font-semibold">Início</span>
       </div>
       <div className="flex-1 overflow-y-auto nx-scroll px-2 pb-3 pt-2">
-        <NavItem icon={<LayoutDashboard className="size-[18px]" />} label="Visão geral" active={view.kind === 'home'} onClick={() => openView({ kind: 'home' })} />
+        {!isMobile ? <NavItem icon={<LayoutDashboard className="size-[18px]" />} label="Visão geral" active={view.kind === 'home'} onClick={() => openView({ kind: 'home' })} /> : null}
         <NavItem icon={<Users className="size-[18px]" />} label="Amigos" active={view.kind === 'friends'} onClick={() => openView({ kind: 'friends' })} badge={pendingFriends} />
         {claudeVisible ? (
           <>
@@ -646,7 +648,7 @@ export function HomeSidebar() {
         </SectionHeader>
         {dms.filter((d) => !d.hidden).length === 0 ? (
           <p className="px-2.5 py-2 text-[13px] text-fg-3">
-            Nenhuma conversa ainda. Toque no <b>+</b> para falar com alguém da sua equipe.
+            Nenhuma conversa ainda. Toque no <b>+</b> para falar com um amigo ou com alguém da sua equipe.
           </p>
         ) : null}
         {dms

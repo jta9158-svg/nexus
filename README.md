@@ -4,11 +4,11 @@ Central da equipe do **ALPHA — Templo da Magia** (e de outros jogos): chat e c
 
 Funciona no **Windows** (app instalável), no **navegador** e como app no **iPhone, iPad e Android**.
 
-## O que já está pronto (versão 0.1.6)
+## O que já está pronto (versão 0.1.7)
 
 | Área | Situação |
 |---|---|
-| Interface (PC, tablet e celular) | ✅ pronta, igual ao layout de referência; testada em 1536 px, iPad, iPhone e Android |
+| Interface (PC, tablet e celular) | ✅ pronta, igual ao layout de referência; testada em 1536 px, iPad, iPhone e Android. No celular não há “Início”/“Visão geral”: o botão do controle mostra os amigos e as conversas privadas |
 | Login, cadastro, recuperação de senha | ✅ no ar — cadastro e login testados no servidor real; a recuperação de senha precisa de um SMTP próprio |
 | Servidores no estilo Discord | ✅ cada pessoa cria o próprio servidor (modelos Amigos, Jogos, Estudo, Estúdio ou do zero); **só entra com link de convite** (PIN opcional, com limite de tentativas); categorias de canais com arrastar e soltar; cargos com ordem e cor livre; apelido no servidor; banimentos; transferir dono; aviso de “entrou no servidor” |
 | Serviços só nos servidores de jogos | ✅ Faturamento Roblox, Projetos, Finanças e Arquivos aparecem nos modelos “Jogos” e “Estúdio de jogos”; o dono liga/desliga nas configurações do servidor |

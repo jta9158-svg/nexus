@@ -1,6 +1,6 @@
 # Testes do NEXUS
 
-Situação em **30/10/2026**, versão **0.1.6**. Tudo abaixo foi executado de verdade; o que ainda não pôde ser testado está marcado como **pendente**, com o motivo.
+Situação em **30/10/2026**, versão **0.1.7**. Tudo abaixo foi executado de verdade; o que ainda não pôde ser testado está marcado como **pendente**, com o motivo.
 
 ## 1. Testes automáticos
 
@@ -14,7 +14,7 @@ Situação em **30/10/2026**, versão **0.1.6**. Tudo abaixo foi executado de ve
 | Agente publicado na LiveKit Cloud | logs da LiveKit + despacho de teste para uma sala | trabalhador `nexus-claude` registrado; entrou na sala de teste, estado “ouvindo”, sem erros |
 | Checagem de tipos das 5 funções | `deno check supabase/functions/*/index.ts` | sem erros |
 | Checagem de tipos e build do app | `cd apps/web && npm run build` | sem erros |
-| Visual com servidor **simulado** (dados de exemplo só no teste; o teste recusa qualquer acesso a um servidor real): PC 1536 px, iPad, iPhone, Android; login com a dica de instalação; categorias na barra lateral; convite com PIN; criar servidor com modelos; entrar com link + PIN; convite aberto antes do login; **pessoa comum não vê o Claude**; **Amigos**: lista, pedidos pendentes, adicionar pelo nick, perfil com “Aceitar” | `cd apps/web && npx vite build --mode visual && node tests/visual.mjs` | 28 telas, sem erros de JavaScript; app do Windows aberto por `nexus://convite/…` mostra o convite e o aviso de atualização; PIN visível no convite, campo de PIN ao entrar, Claude escondido para quem não é o administrador; pedido de amizade pelo nick enviado; botão “Aceitar” no perfil de quem mandou pedido |
+| Visual com servidor **simulado** (dados de exemplo só no teste; o teste recusa qualquer acesso a um servidor real): PC 1536 px, iPad, iPhone, Android; login com a dica de instalação; categorias na barra lateral; convite com PIN; criar servidor com modelos; entrar com link + PIN; convite aberto antes do login; **pessoa comum não vê o Claude**; **Amigos**: lista, pedidos pendentes, adicionar pelo nick, perfil com “Aceitar”; **celular** sem a aba “Início” e com o controle mostrando as conversas privadas | `cd apps/web && npx vite build --mode visual && node tests/visual.mjs` | 29 telas, sem erros de JavaScript; app do Windows aberto por `nexus://convite/…` mostra o convite e o aviso de atualização; PIN visível no convite, campo de PIN ao entrar, Claude escondido para quem não é o administrador; pedido de amizade pelo nick enviado; botão “Aceitar” no perfil de quem mandou pedido; no celular, aba “Início” removida, controle mostra as conversas privadas e “Visão geral” escondida |
 | App do Windows (Electron) abrindo e mostrando o app | `xvfb-run node apps/web/tests/desktop-visual.mjs saida.png` | abriu e renderizou (no Linux) |
 | Instalador do Windows | 7-Zip lista e testa o conteúdo do `NEXUS-Setup.exe` | todos os arquivos íntegros |
 | APK Android | `aapt2 dump badging` e `apksigner verify` | pacote `app.nexus.mobile`, versão 0.1.0, assinatura de depuração válida |
