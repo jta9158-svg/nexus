@@ -51,7 +51,17 @@ Situação em **29/10/2026**, versão **0.1.0**. Tudo abaixo foi executado de ve
 
 Modos (seção 5.2) — testado no banco: em “Trabalhador em segundo plano” a dúvida que não bloqueia vai para as pendências sem notificar e não pausa a tarefa; a bloqueante notifica; em “Híbrido” a dúvida média notifica. Modo inválido é recusado.
 
-## 3. Testes que dependem das contas (a fazer juntos)
+## 3. Servidor real (Supabase, 29/10/2026)
+
+| Verificação | Resultado |
+|---|---|
+| As 7 migrações aplicadas no projeto real | ✅ sem erros |
+| Tabelas sem RLS no esquema público | ✅ nenhuma (37 tabelas protegidas, 101 políticas) |
+| Gatilho de novo usuário, 4 buckets de arquivos, 15 tabelas no tempo real | ✅ |
+| 5 funções publicadas e respondendo (sem login → 401 “Faça login para continuar.”) | ✅ |
+| App compilado com o servidor real: abre na tela de login e o servidor de login responde (senha errada → “E-mail ou senha incorretos.”) | ✅ |
+
+## 4. Testes que dependem das contas (a fazer juntos)
 
 Depois de configurar Supabase, LiveKit e a chave do Claude (`CONFIGURACAO.md`):
 

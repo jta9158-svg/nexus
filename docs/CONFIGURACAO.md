@@ -1,5 +1,22 @@
 # Configurar o NEXUS (passo a passo)
 
+## Situação atual (29/10/2026)
+
+| Parte | Situação |
+|---|---|
+| Supabase | ✅ projeto `nexus` (organização NEXUS, plano gratuito, região São Paulo — `qeugxkmoirqwbmdfwbrt`) |
+| Banco | ✅ as 7 migrações aplicadas; 37 tabelas, todas com regras de acesso (RLS) |
+| Login | ✅ cadastro por e-mail e senha (mínimo 8 caracteres). **Confirmação de e-mail desligada**: o e-mail padrão do Supabase só entrega para a equipe do projeto (2 por hora). Para a recuperação de senha funcionar para todos, configure um SMTP próprio (passo 1.2) |
+| Funções | ✅ `claude-chat`, `claude-channel`, `livekit-token`, `roblox`, `companion-run` publicadas; segredo `NEXUS_INTERNAL_SECRET` configurado |
+| Coleta do Roblox | ✅ agendada a cada 15 minutos (pg_cron) |
+| Calls (LiveKit) | ⏳ falta criar a conta e colocar os segredos `LIVEKIT_*` (passo 3) |
+| Claude (API) | ⏳ falta a chave `ANTHROPIC_API_KEY` (passo 2) |
+| Site e instaladores | repositório `jta9158-svg/nexus` no GitHub; site em `https://jta9158-svg.github.io/nexus/` |
+
+Segredos do projeto (só para o dono): <https://supabase.com/dashboard/project/qeugxkmoirqwbmdfwbrt/functions/secrets>
+
+Os passos abaixo explicam como montar tudo do zero (por exemplo, em outro projeto).
+
 Tempo estimado: **30 a 60 minutos**. Tudo nos planos gratuitos, exceto o uso da API do Claude (coberto pelos créditos mensais do plano Max, se você tiver).
 
 > Guarde em um lugar seguro (gerenciador de senhas) tudo que estiver marcado como **SECRETO**. Nunca coloque esses valores no app, no chat da equipe ou no GitHub.

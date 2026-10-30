@@ -15,7 +15,7 @@ Fases da especificação (seção 11) e onde cada uma está. ✅ pronto e testad
 
 ## Próximas entregas (em ordem)
 
-1. **Colocar no ar** (com você, ~30–60 min): Supabase, LiveKit, chave do Claude, GitHub. Depois disso, rodar a seção 3 de `TESTES.md`.
+1. **Colocar no ar** (com você, ~30–60 min): Supabase, LiveKit, chave do Claude, GitHub. Depois disso, rodar a seção 4 de `TESTES.md`.
 2. **Receita do Roblox** pela API oficial: chave guardada só no servidor, coleta diária, confirmado × estimado, sem duplicar.
 3. **Versões de arquivos e restauração**: enviar nova versão, ver histórico, comparar, restaurar; ponto de restauração antes de mudanças grandes; rotina de backup (no plano gratuito do Supabase não há backup automático — exportação agendada para o GitHub ou outro armazenamento, ou plano Pro com backup diário).
 4. **Voz do Claude nas calls** (fase 5): agente no LiveKit Agents, com indicador de escuta, silenciar/pausar/remover, interrupção (barge-in), política de turnos por modo. Só com a sua autorização de custos (≈ US$ 1–1,40 por hora de escuta, ver `CUSTOS.md`).
