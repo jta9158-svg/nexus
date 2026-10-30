@@ -18,13 +18,18 @@ export const COMPANION_SCOPES: Array<{ key: string; label: string; description: 
   { key: 'modificar_projetos', label: 'Criar e alterar tarefas', description: 'Registrar bugs, tarefas e melhorias encontradas.', risk: 'medio', available: true },
   { key: 'ver_financas', label: 'Consultar finanças', description: 'Ler lançamentos e resumos financeiros que você pode ver.', risk: 'alto', available: true },
   { key: 'ler_mensagens', label: 'Ler mensagens autorizadas', description: 'Ler o histórico recente de canais quando você pedir.', risk: 'medio', available: true },
-  { key: 'ouvir_call', label: 'Ouvir calls', description: 'Receber o áudio da sala (requer o serviço de voz).', risk: 'alto', available: false },
-  { key: 'falar_call', label: 'Falar nas calls', description: 'Responder por voz (requer o serviço de voz).', risk: 'medio', available: false },
+  { key: 'ouvir_call', label: 'Ouvir calls', description: 'Ouvir a call quando VOCÊ chamar o Claude pelo botão da call. Nada é gravado.', risk: 'alto', available: false },
+  { key: 'falar_call', label: 'Falar nas calls', description: 'Responder por voz quando alguém disser "Claude".', risk: 'medio', available: false },
   { key: 'executar_comandos', label: 'Executar comandos no PC', description: 'Rodar comandos no computador (requer o agente local).', risk: 'alto', available: false },
   { key: 'controlar_apps', label: 'Controlar aplicativos', description: 'Roblox Studio e Blender (requer o agente local).', risk: 'alto', available: false },
   { key: 'integracoes_externas', label: 'Integrações externas', description: 'Usar serviços como Roblox e Google Drive.', risk: 'medio', available: false },
   { key: 'publicar_alteracoes', label: 'Publicar alterações', description: 'Publicar mudanças no jogo. Sempre pede confirmação.', risk: 'alto', available: false },
 ];
+
+/** Ouvir/Falar nas calls só ficam disponíveis quando o serviço de voz estiver ativo. */
+export function scopeAvailable(s: { key: string; available: boolean }, voiceReady: boolean): boolean {
+  return s.available || ((s.key === 'ouvir_call' || s.key === 'falar_call') && voiceReady);
+}
 
 export const MODES: Array<{ key: CompanionMode; label: string; description: string }> = [
   { key: 'quando_chamado', label: 'Só quando chamado', description: 'Fica em silêncio e responde quando alguém chama ou envia um comando.' },
@@ -43,6 +48,7 @@ interface CompanionState {
   load: () => Promise<void>;
   setMode: (mode: CompanionMode) => Promise<void>;
   setMaxConcurrent: (n: number) => Promise<void>;
+  setVoice: (patch: Partial<Pick<CompanionSettings, 'voice_option' | 'voice_speed' | 'voice_greeting'>>) => Promise<void>;
   setPermission: (scope: string, granted: boolean) => Promise<void>;
   createTask: (input: { title: string; instructions: string; projectId?: string | null; priority?: 'baixa' | 'media' | 'alta'; scopes?: string[]; resourceKey?: string | null }) => Promise<string | null>;
   run: (taskId: string) => Promise<void>;
@@ -116,6 +122,17 @@ export const useCompanion = create<CompanionState>((set, get) => ({
 
   setMode: async (mode) => {
     const { data, error } = await sb().from('companion_settings').update({ mode }).eq('user_id', get().settings?.user_id ?? '').select('*').single();
+    if (error) return void toast.error(error);
+    set({ settings: data as CompanionSettings });
+  },
+
+  setVoice: async (patch) => {
+    const { data, error } = await sb()
+      .from('companion_settings')
+      .update(patch)
+      .eq('user_id', get().settings?.user_id ?? '')
+      .select('*')
+      .single();
     if (error) return void toast.error(error);
     set({ settings: data as CompanionSettings });
   },

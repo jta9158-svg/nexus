@@ -18,7 +18,8 @@ import {
   Trash2,
   XCircle,
 } from 'lucide-react';
-import { useCompanion, COMPANION_SCOPES, MODES } from '../../store/companion';
+import { useCompanion, COMPANION_SCOPES, MODES, scopeAvailable } from '../../store/companion';
+import { useSession } from '../../store/session';
 import { useApp } from '../../store/app';
 import { sb } from '../../lib/supabase';
 import { formatDate, formatRelative, formatTime } from '../../lib/format';
@@ -211,6 +212,7 @@ function NewTaskModal({ open, onClose, projects }: { open: boolean; onClose: () 
 export function CompanionView() {
   const store = useCompanion();
   const quota = useApp((s) => s.claudeQuota);
+  const voiceReady = useSession((s) => !!s.appSettings?.voice_agent_ready);
   const [tab, setTab] = useState<'tarefas' | 'duvidas' | 'permissoes' | 'historico' | 'modo'>('tarefas');
   const [creating, setCreating] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -295,14 +297,14 @@ export function CompanionView() {
             <Card className="p-4">
               <div className="text-[12px] text-fg-3">Voz nas calls</div>
               <div className="font-semibold flex items-center gap-1.5">
-                <Mic className="size-4 text-fg-3" /> Não conectado
+                <Mic className={cx('size-4', voiceReady ? 'text-success' : 'text-fg-3')} /> {voiceReady ? 'Disponível' : 'Ainda não ativada'}
               </div>
-              <div className="text-[12px] text-fg-3">Serviço de voz: próxima fase</div>
+              <div className="text-[12px] text-fg-3">{voiceReady ? 'Chame pelo botão do robô na call' : 'O administrador ativa o serviço de voz'}</div>
             </Card>
             <Card className="p-4">
               <div className="text-[12px] text-fg-3">Permissões concedidas</div>
               <div className="font-semibold flex items-center gap-1.5">
-                <ShieldCheck className="size-4 text-success" /> {granted} de {COMPANION_SCOPES.filter((s) => s.available).length}
+                <ShieldCheck className="size-4 text-success" /> {granted} de {COMPANION_SCOPES.filter((s) => scopeAvailable(s, voiceReady)).length}
               </div>
               <button className="text-[12px] text-mention hover:underline" onClick={() => setTab('permissoes')}>
                 Revisar
@@ -405,13 +407,13 @@ export function CompanionView() {
                   <div key={s.key} className="py-1.5">
                     <Toggle
                       checked={!!store.permissions[s.key]}
-                      disabled={!s.available}
+                      disabled={!scopeAvailable(s, voiceReady)}
                       onChange={(v) => void store.setPermission(s.key, v)}
                       label={
                         <span className="flex items-center gap-2">
                           {s.label}
                           {s.risk === 'alto' ? <Badge tone="danger">Sensível</Badge> : null}
-                          {!s.available ? <Badge>Próxima fase</Badge> : null}
+                          {!scopeAvailable(s, voiceReady) ? <Badge>{s.key === 'ouvir_call' || s.key === 'falar_call' ? 'Aguardando ativação' : 'Próxima fase'}</Badge> : null}
                         </span>
                       }
                       description={s.description}
@@ -486,9 +488,40 @@ export function CompanionView() {
                 trabalho (as outras ficam na aba Dúvidas); em “Participante ativo” ele pode registrar sugestões extras. Nos canais de texto ele só responde quando
                 alguém escreve @Claude, em qualquer modo.
               </Notice>
-              <Notice tone="info" title="Claude falando nas calls">
-                A participação por voz precisa de um serviço extra (LiveKit Agents + transcrição + síntese de voz), com custo por minuto. Ela será ativada na fase 5,
-                depois da sua autorização de custos; a partir daí o modo escolhido aqui também valerá na call.
+              <Card className="p-4 sm:p-5 space-y-3">
+                <div className="font-semibold">Voz do Claude na call</div>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <Field label="Voz">
+                    <Select value={store.settings?.voice_option ?? 'voz1'} onChange={(e) => void store.setVoice({ voice_option: e.target.value as 'voz1' | 'voz2' })}>
+                      <option value="voz1">Voz 1 (padrão)</option>
+                      <option value="voz2">Voz 2</option>
+                    </Select>
+                  </Field>
+                  <Field label="Velocidade da fala">
+                    <Select value={store.settings?.voice_speed ?? 'normal'} onChange={(e) => void store.setVoice({ voice_speed: e.target.value as 'lenta' | 'normal' | 'rapida' })}>
+                      <option value="lenta">Mais devagar</option>
+                      <option value="normal">Normal</option>
+                      <option value="rapida">Mais rápida</option>
+                    </Select>
+                  </Field>
+                </div>
+                <Toggle
+                  checked={store.settings?.voice_greeting ?? true}
+                  onChange={(v) => void store.setVoice({ voice_greeting: v })}
+                  label="Cumprimentar ao entrar na call"
+                  description="Uma frase curta avisando que entrou e como chamar."
+                />
+              </Card>
+              <Notice tone="info" title="Como funciona na call">
+                {voiceReady ? (
+                  <>
+                    Na call, toque no botão do robô para chamar o Claude. Ele só entra quando você chama, mostra que está ouvindo e pode ser pausado, silenciado ou tirado da
+                    call por quem chamou. Ele responde quando alguém diz “Claude” (no modo “Participante ativo” pode comentar sozinho quando for útil). Não grava a conversa e
+                    nunca fala de finanças na call. Precisa das permissões “Ouvir calls” e “Falar nas calls” liberadas aqui.
+                  </>
+                ) : (
+                  <>O serviço de voz ainda não foi ativado pelo administrador do NEXUS. Quando estiver ativo, o botão do robô aparece nas calls.</>
+                )}
               </Notice>
             </div>
           ) : null}

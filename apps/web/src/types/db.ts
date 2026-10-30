@@ -17,6 +17,7 @@ export interface AppSettings {
   claude_daily_tokens_per_user: number;
   claude_monthly_budget_usd: number;
   companion_max_concurrent_tasks: number;
+  voice_agent_ready?: boolean;
 }
 
 export interface Server {
@@ -336,6 +337,21 @@ export interface CompanionSettings {
   max_concurrent_tasks: number;
   voice_enabled: boolean;
   transcript_retention_days: number;
+  voice_option?: 'voz1' | 'voz2';
+  voice_speed?: 'lenta' | 'normal' | 'rapida';
+  voice_greeting?: boolean;
+}
+
+export interface VoiceSession {
+  id: string;
+  server_id: string;
+  channel_id: string;
+  room: string;
+  inviter_id: string | null;
+  status: 'chamando' | 'na_call' | 'encerrada' | 'falhou';
+  ended_reason: string | null;
+  started_at: string;
+  ended_at: string | null;
 }
 
 export type CompanionTaskStatus =

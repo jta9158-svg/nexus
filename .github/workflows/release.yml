@@ -116,7 +116,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
-      - uses: android-actions/setup-android@v3
+      # O Android SDK já vem instalado no ubuntu-latest (ANDROID_HOME)
       - uses: actions/download-artifact@v4
         with:
           name: web-dist

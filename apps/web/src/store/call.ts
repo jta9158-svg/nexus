@@ -3,13 +3,19 @@
 // se a pessoa pode entrar naquele canal de voz.
 import { create } from 'zustand';
 import {
+  AudioPresets,
+  ConnectionQuality,
   ConnectionState,
   DisconnectReason,
   Room,
   RoomEvent,
+  ScreenSharePresets,
   Track,
   type Participant,
+  type RemoteParticipant,
   type RemoteTrack,
+  type ScreenShareCaptureOptions,
+  type TrackPublishOptions,
 } from 'livekit-client';
 import { callFunction } from '../lib/supabase';
 import { setVoicePresence } from '../lib/realtime';
@@ -19,14 +25,55 @@ import { hasPerm } from '../lib/permissions';
 import { toast } from './toast';
 import { useApp } from './app';
 
+export type AgentState = 'initializing' | 'idle' | 'listening' | 'thinking' | 'speaking' | string;
+
 export interface CallParticipant {
   identity: string;
   name: string;
   isLocal: boolean;
+  isAgent: boolean;
   speaking: boolean;
   micOn: boolean;
   camOn: boolean;
   screenOn: boolean;
+  quality: ConnectionQuality;
+  agentState?: AgentState;
+  agentPaused?: boolean;
+  agentMuted?: boolean;
+}
+
+/** Qualidade do compartilhamento de tela (gasta mais ou menos internet). */
+export type ScreenQuality = 'nitida' | 'fluida' | 'economica';
+
+export const SCREEN_QUALITIES: Array<{ key: ScreenQuality; label: string; description: string }> = [
+  { key: 'nitida', label: 'Nítida', description: '1080p a 15 fps — ideal para código, textos e o Roblox Studio.' },
+  { key: 'fluida', label: 'Fluida (jogos)', description: '1080p a 30 fps — movimento suave para mostrar gameplay.' },
+  { key: 'economica', label: 'Econômica', description: '720p a 15 fps — para internet fraca ou 4G.' },
+];
+
+function screenSettings(q: ScreenQuality): { capture: ScreenShareCaptureOptions; publish: TrackPublishOptions } {
+  const preset = q === 'fluida' ? ScreenSharePresets.h1080fps30 : q === 'economica' ? ScreenSharePresets.h720fps15 : ScreenSharePresets.h1080fps15;
+  return {
+    capture: {
+      audio: true,
+      systemAudio: 'include',
+      selfBrowserSurface: 'exclude',
+      surfaceSwitching: 'include',
+      contentHint: q === 'fluida' ? 'motion' : 'detail',
+      resolution: { width: preset.width, height: preset.height, frameRate: preset.encoding.maxFramerate ?? 15 },
+    },
+    publish: {
+      screenShareEncoding: preset.encoding,
+      // Camada leve para quem vê a tela em miniatura (economiza internet de todos)
+      screenShareSimulcastLayers: q === 'economica' ? [] : [ScreenSharePresets.h360fps3],
+      videoCodec: 'vp9',
+      backupCodec: true,
+      // Áudio do computador (jogo, vídeo) com qualidade de música e sem cortes
+      audioPreset: AudioPresets.musicHighQualityStereo,
+      dtx: false,
+      red: false,
+    },
+  };
 }
 
 type Status = 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'error';
@@ -43,23 +90,41 @@ interface CallState {
   screenOn: boolean;
   deafened: boolean;
   needsAudioUnlock: boolean;
+  screenQuality: ScreenQuality;
+  volumes: Record<string, number>;
+  claudeBusy: boolean;
   version: number;
   join: (serverId: string, channelId: string) => Promise<void>;
   leave: () => Promise<void>;
   toggleMic: () => Promise<void>;
   toggleCam: () => Promise<void>;
   toggleScreen: () => Promise<void>;
+  setScreenQuality: (q: ScreenQuality) => Promise<void>;
   toggleDeafen: () => void;
+  setVolume: (identity: string, volume: number) => void;
   unlockAudio: () => Promise<void>;
+  inviteClaude: () => Promise<void>;
+  removeClaude: () => Promise<void>;
+  claudeCommand: (action: 'pausar_escuta' | 'retomar_escuta' | 'silenciar' | 'falar') => Promise<void>;
 }
 
 const DEVICE_KEY = 'nexus.devices.v1';
+const QUALITY_KEY = 'nexus.screenQuality.v1';
 
 export function readDevicePrefs(): { audioinput?: string; audiooutput?: string; videoinput?: string } {
   try {
     return JSON.parse(localStorage.getItem(DEVICE_KEY) || '{}');
   } catch {
     return {};
+  }
+}
+
+function readQuality(): ScreenQuality {
+  try {
+    const q = localStorage.getItem(QUALITY_KEY);
+    return q === 'fluida' || q === 'economica' || q === 'nitida' ? q : 'nitida';
+  } catch {
+    return 'nitida';
   }
 }
 
@@ -112,19 +177,31 @@ function clearAudio() {
 }
 
 function describe(p: Participant, isLocal: boolean): CallParticipant {
+  const attrs = p.attributes ?? {};
   return {
     identity: p.identity,
-    name: p.name || p.identity,
+    name: p.isAgent ? 'Claude' : p.name || p.identity,
     isLocal,
+    isAgent: p.isAgent,
     speaking: p.isSpeaking,
     micOn: p.isMicrophoneEnabled,
     camOn: p.isCameraEnabled,
     screenOn: p.isScreenShareEnabled,
+    quality: p.connectionQuality,
+    agentState: p.isAgent ? attrs['lk.agent.state'] : undefined,
+    agentPaused: p.isAgent ? attrs['nexus.escuta'] === 'pausada' : undefined,
+    agentMuted: p.isAgent ? attrs['nexus.voz'] === 'silenciada' : undefined,
   };
 }
 
 function permsFor(serverId: string): string[] {
   return useApp.getState().myPerms[serverId] ?? [];
+}
+
+function agentOf(room: Room | null): RemoteParticipant | undefined {
+  if (!room) return undefined;
+  for (const p of room.remoteParticipants.values()) if (p.isAgent) return p;
+  return undefined;
 }
 
 export const useCall = create<CallState>((set, get) => {
@@ -169,13 +246,16 @@ export const useCall = create<CallState>((set, get) => {
     screenOn: false,
     deafened: false,
     needsAudioUnlock: false,
+    screenQuality: readQuality(),
+    volumes: {},
+    claudeBusy: false,
     version: 0,
 
     join: async (serverId, channelId) => {
       const cur = get();
       if (cur.channelId === channelId && (cur.status === 'connected' || cur.status === 'connecting')) return;
       if (cur.room) await get().leave();
-      set({ status: 'connecting', error: null, serverId, channelId, participants: [], deafened: false });
+      set({ status: 'connecting', error: null, serverId, channelId, participants: [], deafened: false, volumes: {} });
       try {
         const { token, url } = await callFunction<{ token: string; url: string; room: string }>('livekit-token', { channel_id: channelId });
         const prefs = readDevicePrefs();
@@ -190,20 +270,32 @@ export const useCall = create<CallState>((set, get) => {
           },
           videoCaptureDefaults: { deviceId: prefs.videoinput, resolution: { width: 1280, height: 720, frameRate: 30 } },
           audioOutput: prefs.audiooutput ? { deviceId: prefs.audiooutput } : undefined,
+          publishDefaults: {
+            // Voz limpa (48 kbps Opus), com proteção contra perda de pacotes
+            audioPreset: AudioPresets.music,
+            dtx: true,
+            red: true,
+            videoCodec: 'vp8',
+            simulcast: true,
+          },
         });
         set({ room });
 
         room
-          .on(RoomEvent.ParticipantConnected, () => {
+          .on(RoomEvent.ParticipantConnected, (p) => {
             playPing('join');
+            if (p.isAgent) toast.info('Claude entrou na call', 'Fale "Claude" e faça a pergunta. Ele não grava a conversa.');
             sync();
           })
-          .on(RoomEvent.ParticipantDisconnected, () => {
+          .on(RoomEvent.ParticipantDisconnected, (p) => {
             playPing('leave');
+            if (p.isAgent) toast.info('Claude saiu da call');
             sync();
           })
-          .on(RoomEvent.TrackSubscribed, (track, pub) => {
+          .on(RoomEvent.TrackSubscribed, (track, pub, participant) => {
             attachAudio(track, pub.trackSid);
+            const v = get().volumes[participant.identity];
+            if (v !== undefined) participant.setVolume(v);
             sync();
           })
           .on(RoomEvent.TrackUnsubscribed, (track, pub) => {
@@ -215,6 +307,8 @@ export const useCall = create<CallState>((set, get) => {
           .on(RoomEvent.LocalTrackPublished, sync)
           .on(RoomEvent.LocalTrackUnpublished, sync)
           .on(RoomEvent.ActiveSpeakersChanged, sync)
+          .on(RoomEvent.ConnectionQualityChanged, sync)
+          .on(RoomEvent.ParticipantAttributesChanged, sync)
           .on(RoomEvent.AudioPlaybackStatusChanged, () => set({ needsAudioUnlock: !room.canPlaybackAudio }))
           .on(RoomEvent.Reconnecting, () => set({ status: 'reconnecting' }))
           .on(RoomEvent.Reconnected, () => {
@@ -309,20 +403,34 @@ export const useCall = create<CallState>((set, get) => {
         return;
       }
       const enabling = !room.localParticipant.isScreenShareEnabled;
+      const { capture, publish } = screenSettings(get().screenQuality);
       try {
-        await room.localParticipant.setScreenShareEnabled(enabling, {
-          audio: true,
-          systemAudio: 'include',
-          selfBrowserSurface: 'exclude',
-          surfaceSwitching: 'include',
-          contentHint: 'detail',
-          resolution: { width: 1920, height: 1080, frameRate: 30 },
-        });
+        await room.localParticipant.setScreenShareEnabled(enabling, capture, publish);
       } catch (err) {
         const name = (err as Error).name;
         if (name !== 'NotAllowedError' && name !== 'AbortError') toast.error(err, 'Não foi possível compartilhar a tela');
       }
       sync();
+    },
+
+    setScreenQuality: async (q) => {
+      set({ screenQuality: q });
+      try {
+        localStorage.setItem(QUALITY_KEY, q);
+      } catch {
+        // ignore
+      }
+      // Se já estiver compartilhando, troca a qualidade na hora
+      const room = get().room;
+      if (room?.localParticipant.isScreenShareEnabled) {
+        await room.localParticipant.setScreenShareEnabled(false).catch(() => undefined);
+        const { capture, publish } = screenSettings(q);
+        await room.localParticipant.setScreenShareEnabled(true, capture, publish).catch((err) => {
+          const name = (err as Error).name;
+          if (name !== 'NotAllowedError' && name !== 'AbortError') toast.error(err, 'Não foi possível trocar a qualidade da tela');
+        });
+        sync();
+      }
     },
 
     toggleDeafen: () => {
@@ -337,11 +445,56 @@ export const useCall = create<CallState>((set, get) => {
       }
     },
 
+    setVolume: (identity, volume) => {
+      const v = Math.max(0, Math.min(1, volume));
+      const p = get().room?.remoteParticipants.get(identity);
+      p?.setVolume(v);
+      set({ volumes: { ...get().volumes, [identity]: v } });
+    },
+
     unlockAudio: async () => {
       const room = get().room;
       if (!room) return;
       await room.startAudio().catch(() => undefined);
       set({ needsAudioUnlock: !room.canPlaybackAudio });
+    },
+
+    inviteClaude: async () => {
+      const { channelId } = get();
+      if (!channelId || get().claudeBusy) return;
+      set({ claudeBusy: true });
+      try {
+        const r = await callFunction<{ status: string }>('claude-voice', { action: 'invite', channel_id: channelId });
+        if (r.status === 'ja_na_call') toast.info('O Claude já está nesta call');
+        else toast.success('Chamando o Claude…', 'Ele entra em alguns segundos.');
+      } catch (err) {
+        toast.error(err, 'Não foi possível chamar o Claude');
+      } finally {
+        set({ claudeBusy: false });
+      }
+    },
+
+    removeClaude: async () => {
+      const { channelId } = get();
+      if (!channelId || get().claudeBusy) return;
+      set({ claudeBusy: true });
+      try {
+        await callFunction('claude-voice', { action: 'remove', channel_id: channelId });
+      } catch (err) {
+        toast.error(err, 'Não foi possível tirar o Claude da call');
+      } finally {
+        set({ claudeBusy: false });
+      }
+    },
+
+    claudeCommand: async (action) => {
+      const room = get().room;
+      const agent = agentOf(room);
+      if (!room || !agent) return;
+      const payload = new TextEncoder().encode(JSON.stringify({ action }));
+      await room.localParticipant
+        .publishData(payload, { reliable: true, topic: 'nexus-claude', destinationIdentities: [agent.identity] })
+        .catch((err) => toast.error(err, 'Não foi possível falar com o Claude'));
     },
   };
 });
