@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ClipboardEvent, type DragEve
 import { FileText, Paperclip, Plus, SendHorizontal, Smile, X } from 'lucide-react';
 import { useApp } from '../../store/app';
 import { useMessages, type TargetKind } from '../../store/messages';
-import { useSession } from '../../store/session';
+import { useClaudeVisible, useSession } from '../../store/session';
 import { toast } from '../../store/toast';
 import { callFunction } from '../../lib/supabase';
 import { sendTyping } from '../../lib/realtime';
@@ -59,7 +59,8 @@ export function Composer({
 
   const canSend = kind === 'dm' || hasPerm(perms, 'send_messages');
   const canAttach = kind === 'dm' || hasPerm(perms, 'attach_files');
-  const canClaude = kind === 'channel' && hasPerm(perms, 'use_claude');
+  const claudeVisible = useClaudeVisible();
+  const canClaude = kind === 'channel' && claudeVisible && hasPerm(perms, 'use_claude');
 
   useEffect(() => {
     setText('');
@@ -148,7 +149,7 @@ export function Composer({
     setFiles([]);
     setMention(null);
     const msg = await send(target, kind, content, sending);
-    if (msg?.mentions_claude) void askClaudeInChannel(msg);
+    if (msg?.mentions_claude && canClaude) void askClaudeInChannel(msg);
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {

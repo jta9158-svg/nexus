@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { ArrowLeft, KeyRound, Mail, Server, ShieldCheck } from 'lucide-react';
 import { sb, currentConfig } from '../../lib/supabase';
 import { friendlyError } from '../../lib/errors';
@@ -6,8 +6,11 @@ import { clearLocalConfig, publicAppUrl, saveLocalConfig, validateServerConfig }
 import { useSession } from '../../store/session';
 import { usePwa } from '../../lib/pwa';
 import { isCapacitor, isIOS, isMobileOS, isStandalone } from '../../lib/platform';
+import { inviteFromLocation, peekPendingInvite, savePendingInvite } from '../../lib/invite';
+import type { InvitePreview } from '../../types/db';
 import { Button, Field, Input, Notice } from '../ui';
 import { Wordmark } from '../Logo';
+import { ServerIcon } from '../layout/ServerArt';
 
 function Shell({ children, footer }: { children: ReactNode; footer?: ReactNode }) {
   return (
@@ -84,8 +87,46 @@ export function SetupScreen() {
 // ---------------------------------------------------------------------
 type Mode = 'login' | 'signup' | 'forgot';
 
+/** Convite aberto antes do login: mostra o servidor e guarda o código para depois. */
+function pendingInviteCode(): string | null {
+  const code = inviteFromLocation() ?? peekPendingInvite();
+  if (code) savePendingInvite(code);
+  return code;
+}
+
+function InviteBanner({ code }: { code: string }) {
+  const [info, setInfo] = useState<InvitePreview | null | 'erro'>(null);
+  useEffect(() => {
+    void sb()
+      .rpc('preview_invite', { p_code: code })
+      .then(({ data }) => setInfo((data as InvitePreview[] | null)?.[0] ?? 'erro'));
+  }, [code]);
+  if (info === null) return null;
+  if (info === 'erro') {
+    return (
+      <Notice tone="warn" className="mb-5">
+        Esse convite não existe mais. Entre na sua conta e peça um link novo.
+      </Notice>
+    );
+  }
+  return (
+    <div className="mb-5 rounded-xl border border-accent/30 bg-accent/[0.08] p-3 flex items-center gap-3">
+      <ServerIcon name={info.name} url={info.icon_url} size={46} className="rounded-xl shrink-0" />
+      <div className="min-w-0">
+        <div className="text-[12px] text-fg-2">Você foi convidado para entrar em</div>
+        <div className="font-semibold truncate">{info.name}</div>
+        <div className="text-[12px] text-fg-3">
+          {info.valid ? `${info.member_count} ${info.member_count === 1 ? 'membro' : 'membros'}` : info.reason}
+          {info.valid && info.requires_pin ? ' · pede PIN (peça a quem te convidou)' : ''}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function AuthScreen() {
-  const [mode, setMode] = useState<Mode>('login');
+  const [inviteCode] = useState(pendingInviteCode);
+  const [mode, setMode] = useState<Mode>(inviteCode ? 'signup' : 'login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
@@ -184,15 +225,19 @@ export function AuthScreen() {
         </div>
       )}
 
+      {inviteCode && mode !== 'forgot' ? <InviteBanner code={inviteCode} /> : null}
+
       <h1 className="text-xl font-semibold">
         {mode === 'login' ? 'Bem-vindo de volta' : mode === 'signup' ? 'Crie sua conta' : 'Recuperar senha'}
       </h1>
       <p className="text-sm text-fg-2 mt-1 mb-5">
-        {mode === 'login'
-          ? 'Entre para falar com a sua equipe e acompanhar seus jogos.'
-          : mode === 'signup'
-            ? 'Leva menos de um minuto.'
-            : 'Vamos enviar um link seguro para o seu e-mail.'}
+        {inviteCode && mode !== 'forgot'
+          ? 'Entre ou crie sua conta: o convite abre logo em seguida.'
+          : mode === 'login'
+            ? 'Entre para falar com seus amigos e sua equipe.'
+            : mode === 'signup'
+              ? 'Leva menos de um minuto.'
+              : 'Vamos enviar um link seguro para o seu e-mail.'}
       </p>
 
       {info ? (

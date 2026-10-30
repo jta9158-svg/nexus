@@ -18,6 +18,10 @@ export interface AppSettings {
   claude_monthly_budget_usd: number;
   companion_max_concurrent_tasks: number;
   voice_agent_ready?: boolean;
+  /** Calls também em servidores de outras pessoas (padrão: sim, como no Discord). */
+  calls_everyone?: boolean;
+  /** Claude só para o administrador do NEXUS (padrão: sim). */
+  claude_admin_only?: boolean;
 }
 
 export interface Server {
@@ -28,6 +32,9 @@ export interface Server {
   banner_url: string | null;
   owner_id: string;
   is_public: boolean;
+  /** Canal de texto onde aparecem avisos como "Fulano entrou no servidor". */
+  system_channel_id?: string | null;
+  welcome_messages?: boolean;
   created_at: string;
 }
 
@@ -67,7 +74,49 @@ export interface Channel {
   is_private: boolean;
   user_limit: number | null;
   claude_enabled: boolean;
+  /** Categoria (como no Discord); null = sem categoria (aparece no topo). */
+  category_id?: string | null;
   created_at: string;
+}
+
+export interface ChannelCategory {
+  id: string;
+  server_id: string;
+  name: string;
+  position: number;
+  created_at: string;
+}
+
+export interface ServerBan {
+  server_id: string;
+  user_id: string;
+  banned_by: string | null;
+  reason: string | null;
+  created_at: string;
+}
+
+/** Prévia de um convite (funciona antes do login). */
+export interface InvitePreview {
+  server_id: string;
+  name: string;
+  description: string | null;
+  icon_url: string | null;
+  banner_url: string | null;
+  member_count: number;
+  valid: boolean;
+  reason: string | null;
+  requires_pin: boolean;
+  already_member: boolean;
+}
+
+/** Resposta de join_server(code, pin). */
+export interface JoinResult {
+  ok: boolean;
+  server_id?: string;
+  reason?: string;
+  needs_pin?: boolean;
+  locked?: boolean;
+  already_member?: boolean;
 }
 
 export interface Invite {

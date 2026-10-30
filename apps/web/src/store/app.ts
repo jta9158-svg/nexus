@@ -4,6 +4,7 @@ import { friendlyError } from '../lib/errors';
 import { useSession } from './session';
 import type {
   Channel,
+  ChannelCategory,
   ClaudeQuota,
   DmThread,
   Member,
@@ -34,9 +35,11 @@ export type View =
 export type ModalState =
   | { kind: 'createServer' }
   | { kind: 'joinServer'; code?: string }
-  | { kind: 'serverSettings'; serverId: string; tab?: 'geral' | 'cargos' | 'membros' | 'convites' | 'claude' }
+  | { kind: 'serverSettings'; serverId: string; tab?: 'geral' | 'cargos' | 'membros' | 'convites' | 'banimentos' | 'claude' }
+  | { kind: 'category'; serverId: string; categoryId?: string }
+  | { kind: 'nickname'; serverId: string }
   | { kind: 'invite'; serverId: string }
-  | { kind: 'channel'; serverId: string; channelId?: string; channelKind?: 'text' | 'voice' }
+  | { kind: 'channel'; serverId: string; channelId?: string; channelKind?: 'text' | 'voice'; categoryId?: string | null }
   | { kind: 'settings'; tab?: 'conta' | 'perfil' | 'voz' | 'notificacoes' | 'app' | 'admin' }
   | { kind: 'newDm' }
   | { kind: 'profile'; userId: string; serverId?: string | null };
@@ -56,6 +59,7 @@ interface AppState {
   lastChannel: Record<string, string>;
 
   channels: Record<string, Channel[]>;
+  categories: Record<string, ChannelCategory[]>;
   roles: Record<string, Role[]>;
   members: Record<string, Member[]>;
   memberRoles: Record<string, MemberRole[]>;
@@ -108,6 +112,10 @@ interface AppState {
   removeServer: (serverId: string) => void;
   upsertChannel: (c: Channel) => void;
   removeChannel: (channelId: string) => void;
+  upsertCategory: (c: ChannelCategory) => void;
+  removeCategory: (categoryId: string) => void;
+  /** Aplica uma nova organização (arrastar e soltar) antes da resposta do servidor. */
+  applyLayout: (serverId: string, categories: ChannelCategory[], channels: Channel[]) => void;
   upsertRole: (r: Role) => void;
   removeRole: (roleId: string) => void;
   upsertMember: (m: Member) => void;
@@ -154,6 +162,7 @@ const initial = {
   view: { kind: 'home' } as View,
   lastChannel: {} as Record<string, string>,
   channels: {},
+  categories: {},
   roles: {},
   members: {},
   memberRoles: {},
@@ -176,6 +185,10 @@ const initial = {
 };
 
 function sortChannels(list: Channel[]): Channel[] {
+  return [...list].sort((a, b) => a.position - b.position || a.created_at.localeCompare(b.created_at));
+}
+
+function sortCategories(list: ChannelCategory[]): ChannelCategory[] {
   return [...list].sort((a, b) => a.position - b.position || a.created_at.localeCompare(b.created_at));
 }
 
@@ -292,7 +305,7 @@ export const useApp = create<AppState>((set, get) => ({
   loadServer: async (serverId, force) => {
     if (get().loadedServers[serverId] && !force) return;
     const c = sb();
-    const [ch, ro, mem, mr, perms, pj, rx] = await Promise.all([
+    const [ch, ro, mem, mr, perms, pj, rx, cats] = await Promise.all([
       c.from('channels').select('*').eq('server_id', serverId).order('position'),
       c.from('roles').select('*').eq('server_id', serverId).order('position', { ascending: false }),
       c.from('server_members').select('*, profiles(*)').eq('server_id', serverId),
@@ -300,12 +313,14 @@ export const useApp = create<AppState>((set, get) => ({
       c.rpc('my_permissions', { p_server: serverId }),
       c.from('projects').select('*').eq('server_id', serverId).order('created_at'),
       c.from('roblox_experiences').select('*').eq('server_id', serverId).order('created_at'),
+      c.from('channel_categories').select('*').eq('server_id', serverId).order('position'),
     ]);
     const memberRows = (mem.data ?? []) as Array<Member & { profiles: Profile | null }>;
     const profiles = { ...get().profiles };
     for (const m of memberRows) if (m.profiles) profiles[m.user_id] = m.profiles;
     set({
       channels: { ...get().channels, [serverId]: sortChannels((ch.data ?? []) as Channel[]) },
+      categories: { ...get().categories, [serverId]: sortCategories((cats.data ?? []) as ChannelCategory[]) },
       roles: { ...get().roles, [serverId]: (ro.data ?? []) as Role[] },
       members: {
         ...get().members,
@@ -423,6 +438,30 @@ export const useApp = create<AppState>((set, get) => ({
     if ((v.kind === 'channel' || v.kind === 'call') && v.channelId === channelId) {
       void get().selectServer(v.serverId);
     }
+  },
+
+  upsertCategory: (c) => {
+    const list = get().categories[c.server_id];
+    if (!list) return;
+    const next = list.some((x) => x.id === c.id) ? list.map((x) => (x.id === c.id ? c : x)) : [...list, c];
+    set({ categories: { ...get().categories, [c.server_id]: sortCategories(next) } });
+  },
+
+  removeCategory: (categoryId) => {
+    const cats: Record<string, ChannelCategory[]> = {};
+    for (const [sid, list] of Object.entries(get().categories)) cats[sid] = list.filter((c) => c.id !== categoryId);
+    const chans: Record<string, Channel[]> = {};
+    for (const [sid, list] of Object.entries(get().channels)) {
+      chans[sid] = list.map((c) => (c.category_id === categoryId ? { ...c, category_id: null } : c));
+    }
+    set({ categories: cats, channels: chans });
+  },
+
+  applyLayout: (serverId, categories, channels) => {
+    set({
+      categories: { ...get().categories, [serverId]: sortCategories(categories) },
+      channels: { ...get().channels, [serverId]: sortChannels(channels) },
+    });
   },
 
   upsertRole: (r) => {

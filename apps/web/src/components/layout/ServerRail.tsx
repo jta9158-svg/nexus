@@ -83,7 +83,7 @@ export function ServerRail({ className }: { className?: string }) {
           </RailItem>
         );
       })}
-      <RailItem active={false} label="Criar ou entrar em um servidor" onClick={() => setModal({ kind: 'createServer' })}>
+      <RailItem active={false} label="Adicionar um servidor" onClick={() => setModal({ kind: 'createServer' })}>
         <span className="size-full flex items-center justify-center bg-[#1a1f2b] text-success hover:bg-success hover:text-white transition-colors">
           <Plus className="size-6" />
         </span>

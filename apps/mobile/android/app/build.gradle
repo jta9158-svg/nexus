@@ -7,8 +7,8 @@ android {
         applicationId "app.nexus.mobile"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        // Versão vem do CI (tag v0.2.0 → NEXUS_VERSION=0.2.0); padrão 0.1.1
-        def nexusVersion = System.getenv("NEXUS_VERSION") ?: "0.1.1"
+        // Versão vem do CI (tag v0.2.0 → NEXUS_VERSION=0.2.0); padrão 0.1.2
+        def nexusVersion = System.getenv("NEXUS_VERSION") ?: "0.1.2"
         def parts = nexusVersion.tokenize('.').collect { it.replaceAll('[^0-9]', '') ?: '0' }
         versionCode (parts[0].toInteger() * 10000 + parts[1].toInteger() * 100 + parts[2].toInteger())
         versionName nexusVersion

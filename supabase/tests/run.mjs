@@ -251,6 +251,9 @@ async function main() {
 
   // ------------------------------------------------------------------
   console.log('\n• Acesso ao Claude (quem paga é o dono)');
+  // Estas seções testam o modo "compartilhado" (Claude só para mim desligado).
+  ok(one(await service(`select claude_admin_only from public.app_settings`)).claude_admin_only === true, 'padrão: Claude só para o administrador');
+  await service(`update public.app_settings set claude_admin_only = false`);
   ok(one(await asUser(A, `select public.can_use_claude() as x`)).x === true, 'administrador usa o Claude');
   ok(one(await asUser(B, `select public.can_use_claude() as x`)).x === true, 'cargo com "usar Claude" em servidor do administrador libera');
   ok(one(await asUser(D, `select public.can_use_claude() as x`)).x === false, 'membro sem cargo não usa o Claude');
@@ -353,6 +356,121 @@ async function main() {
   ok((await topic(C, `server:${S}`)) === false, 'quem não é membro não entra (não vê quem está online/na call)');
   ok((await topic(B, `user:${B}`)) === true && (await topic(C, `user:${B}`)) === false, 'canal pessoal só do próprio usuário');
   ok((await topic(A, `dm:${dm}`)) === true && (await topic(D, `dm:${dm}`)) === false, 'canal da conversa privada só dos participantes');
+
+  // ------------------------------------------------------------------
+  console.log('\n• Estilo Discord: criar o próprio servidor, convite, PIN, categorias');
+  ok(!!(await denied(C, `select public.create_server('x', 'inexistente')`)), 'modelo de servidor desconhecido é recusado');
+  const S2 = one(await asUser(C, `select public.create_server('Grupo do Intruso', 'amigos') as id`)).id;
+  ok(!!S2, 'qualquer pessoa cria o próprio servidor (modelo "Amigos")');
+  const cats2 = (await asUser(C, `select name from public.channel_categories where server_id = $1 order by position`, [S2])).rows.map((x) => x.name);
+  ok(cats2.join('|') === 'Canais de texto|Canais de voz', 'modelo já vem com categorias', cats2);
+  const ch2 = (await asUser(C, `select id, name, kind, category_id from public.channels where server_id = $1 order by position`, [S2])).rows;
+  ok(ch2.length === 5 && ch2.every((x) => x.category_id), 'canais do modelo ficam dentro das categorias', ch2.length);
+  const geral2 = ch2.find((x) => x.name === 'geral').id;
+  const voice2 = ch2.find((x) => x.kind === 'voice').id;
+  ok(one(await asUser(C, `select system_channel_id from public.servers where id = $1`, [S2])).system_channel_id === geral2, '#geral vira o canal de mensagens do sistema');
+  const catsS = (await asUser(A, `select name from public.channel_categories where server_id = $1 order by position`, [S])).rows.map((x) => x.name);
+  ok(catsS.join('|') === 'Informações|Canais de texto|Canais de voz', 'modelo "Estúdio de jogos" com categoria de informações', catsS);
+
+  await asUser(C, `update public.servers set is_public = true where id = $1`, [S2]);
+  ok(one(await service(`select is_public from public.servers where id = $1`, [S2])).is_public === false, 'não existe servidor público: só entra com link');
+  ok((await asUser(F, `select 1 from public.servers where id = $1`, [S2])).rows.length === 0, 'quem não é membro não vê o servidor');
+  ok(!!(await denied(F, `select public.join_public_server($1)`, [S2])), 'não dá para entrar sem convite');
+
+  const code2 = one(await asUser(C, `insert into public.invites (server_id, created_by) values ($1, $2) returning code`, [S2, C])).code;
+  const anonPrev = one(await asUser(null, `select * from public.preview_invite($1)`, [code2], 'anon'));
+  ok(anonPrev && anonPrev.name === 'Grupo do Intruso' && anonPrev.requires_pin === false && anonPrev.valid === true, 'prévia do convite aparece antes do login', anonPrev);
+  let jr = one(await asUser(F, `select public.join_server($1) as r`, [code2])).r;
+  ok(jr.ok === true && jr.server_id === S2, 'quem tem o link entra no servidor', jr);
+  const welcome = (await asUser(C, `select author_id, meta from public.messages where server_id = $1 and author_kind = 'system'`, [S2])).rows;
+  ok(welcome.length === 1 && welcome[0].author_id === F && welcome[0].meta.type === 'join', 'aviso "entrou no servidor" no canal do sistema', welcome);
+  ok(one(await asUser(F, `select public.join_server($1) as r`, [code2])).r.already_member === true, 'abrir o link de novo não duplica');
+  ok(one(await asUser(F, `select already_member from public.preview_invite($1)`, [code2])).already_member === true, 'prévia sabe quem já é membro');
+
+  ok(!!(await denied(F, `insert into public.server_join_pins (server_id, pin) values ($1, '123456')`, [S2])), 'membro comum não define PIN');
+  await asUser(C, `insert into public.server_join_pins (server_id, pin) values ($1, '482913')`, [S2]);
+  ok((await asUser(F, `select pin from public.server_join_pins where server_id = $1`, [S2])).rows.length === 0, 'só quem gerencia o servidor vê o PIN');
+  ok(one(await asUser(C, `select pin from public.server_join_pins where server_id = $1`, [S2])).pin === '482913', 'dono vê o PIN');
+  ok(!!(await denied(C, `update public.server_join_pins set pin = '12' where server_id = $1`, [S2])), 'PIN precisa ter de 4 a 8 números');
+  ok(one(await asUser(E, `select requires_pin from public.preview_invite($1)`, [code2])).requires_pin === true, 'prévia avisa que o servidor pede PIN');
+  jr = one(await asUser(E, `select public.join_server($1) as r`, [code2])).r;
+  ok(jr.ok === false && jr.needs_pin === true, 'só com o link (sem PIN) não entra', jr);
+  jr = one(await asUser(E, `select public.join_server($1, '000000') as r`, [code2])).r;
+  ok(jr.ok === false && /incorreto/.test(jr.reason), 'PIN errado não entra', jr);
+  ok(!!(await denied(E, `select public.join_server_by_invite($1)`, [code2])), 'app antigo (sem campo de PIN) não entra em servidor com PIN');
+  for (let i = 0; i < 4; i++) await asUser(E, `select public.join_server($1, '111111')`, [code2]);
+  jr = one(await asUser(E, `select public.join_server($1, '482913') as r`, [code2])).r;
+  ok(jr.ok === false && jr.locked === true, 'depois de 5 erros bloqueia por 15 minutos, mesmo com o PIN certo', jr);
+  ok((await asUser(E, `select 1 from public.servers where id = $1`, [S2])).rows.length === 0, 'bloqueado continua de fora');
+  ok(!!(await denied(E, `select * from public.join_attempts`)), 'tentativas ficam só no servidor');
+  await service(`delete from public.join_attempts where user_id = $1`, [E]); // simula os 15 minutos
+  jr = one(await asUser(E, `select public.join_server($1, '482913') as r`, [code2])).r;
+  ok(jr.ok === true, 'link + PIN certo entra', jr);
+
+  const expired = one(await asUser(C, `insert into public.invites (server_id, created_by, expires_at) values ($1, $2, now() - interval '1 minute') returning code`, [S2, C])).code;
+  jr = one(await asUser(D, `select public.join_server($1, '482913') as r`, [expired])).r;
+  ok(jr.ok === false && /expirou/.test(jr.reason), 'link vencido não entra', jr);
+  const once = one(await asUser(C, `insert into public.invites (server_id, created_by, max_uses) values ($1, $2, 1) returning code`, [S2, C])).code;
+  ok(one(await asUser(D, `select public.join_server($1, '482913') as r`, [once])).r.ok === true, 'link de 1 uso funciona uma vez');
+  jr = one(await asUser(A, `select public.join_server($1, '482913') as r`, [once])).r;
+  ok(jr.ok === false && /limite/.test(jr.reason), 'e depois não funciona mais', jr);
+
+  ok(!!(await denied(C, `update public.servers set system_channel_id = $1 where id = $2`, [voice2, S2])), 'canal do sistema precisa ser de texto do próprio servidor');
+  await asUser(C, `update public.servers set welcome_messages = false where id = $1`, [S2]);
+  await asUser(B, `select public.join_server($1, '482913')`, [code2]);
+  ok((await asUser(C, `select 1 from public.messages where server_id = $1 and author_kind = 'system'`, [S2])).rows.length === 3, 'aviso de entrada pode ser desligado');
+
+  const catNew = one(await asUser(C, `insert into public.channel_categories (server_id, name, position) values ($1, 'Eventos', 5) returning id`, [S2])).id;
+  ok(!!catNew, 'quem gerencia canais cria categoria');
+  ok(!!(await denied(F, `insert into public.channel_categories (server_id, name) values ($1, 'hack')`, [S2])), 'membro comum não cria categoria');
+  ok((await asUser(F, `select 1 from public.channel_categories where server_id = $1`, [S2])).rows.length === 3, 'membros veem as categorias');
+  ok((await asUser(B, `select 1 from public.channel_categories where server_id = $1`, [S])).rows.length === 3 &&
+     (await asUser(C, `select 1 from public.channel_categories where server_id = $1`, [S])).rows.length === 0, 'quem não é membro não vê as categorias');
+  await asUser(C, `select public.save_channel_layout($1, $2::jsonb, $3::jsonb)`, [S2, JSON.stringify([{ id: catNew, position: 0 }]), JSON.stringify([{ id: geral2, position: 0, category_id: catNew }])]);
+  ok(one(await asUser(F, `select category_id from public.channels where id = $1`, [geral2])).category_id === catNew &&
+     one(await asUser(F, `select position from public.channel_categories where id = $1`, [catNew])).position === 0, 'arrastar canal e categoria salva a nova ordem');
+  ok(!!(await denied(F, `select public.save_channel_layout($1, '[]'::jsonb, $2::jsonb)`, [S2, JSON.stringify([{ id: geral2, position: 9, category_id: null }])])), 'membro comum não reorganiza canais');
+  const catOfS = one(await asUser(A, `select id from public.channel_categories where server_id = $1 limit 1`, [S])).id;
+  ok(!!(await denied(C, `update public.channels set category_id = $1 where id = $2`, [catOfS, geral2])), 'canal não vai para categoria de outro servidor');
+  await asUser(C, `delete from public.channel_categories where id = $1`, [catNew]);
+  const afterDel = one(await asUser(F, `select category_id from public.channels where id = $1`, [geral2]));
+  ok(afterDel && afterDel.category_id === null, 'apagar a categoria mantém os canais (ficam sem categoria)');
+
+  await asUser(F, `update public.server_members set nickname = 'Fera' where server_id = $1 and user_id = $2`, [S2, F]);
+  ok(one(await asUser(C, `select nickname from public.server_members where server_id = $1 and user_id = $2`, [S2, F])).nickname === 'Fera', 'cada um muda o próprio apelido no servidor');
+  await asUser(F, `update public.server_members set nickname = 'Hack' where server_id = $1 and user_id = $2`, [S2, C]);
+  ok(one(await asUser(C, `select nickname from public.server_members where server_id = $1 and user_id = $2`, [S2, C])).nickname === null, 'ninguém muda o apelido de outra pessoa');
+
+  await asUser(C, `select public.ban_member($1, $2, 'spam')`, [S2, F]);
+  ok((await asUser(C, `select user_id from public.server_bans where server_id = $1`, [S2])).rows.length === 1, 'lista de banidos para quem pode banir');
+  ok((await asUser(B, `select 1 from public.server_bans where server_id = $1`, [S2])).rows.length === 0, 'membro comum não vê os banidos');
+  jr = one(await asUser(F, `select public.join_server($1, '482913') as r`, [code2])).r;
+  ok(jr.ok === false && /banido/.test(jr.reason), 'banido não volta pelo link', jr);
+  await asUser(C, `delete from public.server_bans where server_id = $1 and user_id = $2`, [S2, F]);
+  ok(one(await asUser(F, `select public.join_server($1, '482913') as r`, [code2])).r.ok === true, 'desbanido volta com link + PIN');
+
+  ok(one(await service(`select public._calls_allowed($1) as x`, [S2])).x === true, 'calls liberadas em qualquer servidor (padrão, como no Discord)');
+  await asUser(B, `update public.app_settings set calls_everyone = false`);
+  ok(one(await service(`select calls_everyone from public.app_settings`)).calls_everyone === true, 'só o administrador muda a chave das calls');
+  await asUser(A, `update public.app_settings set calls_everyone = false`);
+  ok(one(await service(`select public._calls_allowed($1) as x`, [S2])).x === false &&
+     one(await service(`select public._calls_allowed($1) as x`, [S])).x === true, 'administrador pode limitar as calls aos servidores dele');
+  await asUser(A, `update public.app_settings set calls_everyone = true`);
+
+  console.log('\n• Claude só para o administrador');
+  await asUser(B, `update public.app_settings set claude_admin_only = true`);
+  ok(one(await service(`select claude_admin_only from public.app_settings`)).claude_admin_only === false, 'só o administrador muda essa chave');
+  await asUser(A, `update public.app_settings set claude_admin_only = true`);
+  ok(one(await service(`select public._can_use_claude($1) as x`, [B])).x === false, 'com a chave ligada, ninguém além do administrador usa o Claude (nem com cargo)');
+  ok(one(await service(`select public._can_use_claude_in_server($1, $2) as x`, [S, B])).x === false, '@Claude não responde a outras pessoas');
+  ok(one(await service(`select allowed from public._claude_quota($1)`, [B])).allowed === false, 'chat e tarefas do Claude bloqueados para os outros');
+  ok(/./.test(one(await service(`select public._voice_invite_check($1, $2) as r`, [voice, B])).r || ''), 'outras pessoas não chamam o Claude para a call');
+  ok(one(await service(`select public._can_use_claude($1) as x`, [A])).x === true &&
+     one(await service(`select public._can_use_claude_in_server($1, $2) as x`, [S, A])).x === true, 'o administrador continua usando tudo');
+  ok(one(await service(`select public._can_use_claude_in_server($1, $2) as x`, [S2, A])).x === false, 'nem o administrador usa o Claude em servidor dos outros sem cargo');
+
+  await asUser(C, `select public.transfer_server_ownership($1, $2)`, [S2, B]);
+  ok(one(await service(`select owner_id from public.servers where id = $1`, [S2])).owner_id === B, 'dono transfere o servidor para outro membro');
 
   // ------------------------------------------------------------------
   console.log('\n• Moderação e posse');

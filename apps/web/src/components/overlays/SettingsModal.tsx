@@ -382,6 +382,8 @@ function AdminTab() {
         claude_daily_tokens_per_user: settings.claude_daily_tokens_per_user,
         claude_monthly_budget_usd: settings.claude_monthly_budget_usd,
         companion_max_concurrent_tasks: settings.companion_max_concurrent_tasks,
+        calls_everyone: settings.calls_everyone ?? true,
+        claude_admin_only: settings.claude_admin_only ?? true,
       })
       .eq('id', true);
     if (error) return toast.error(error);
@@ -456,9 +458,22 @@ function AdminTab() {
         </Field>
       </div>
       <Toggle checked={settings.signup_open} onChange={(v) => setSettings({ ...settings, signup_open: v })} label="Cadastro aberto" description="Informativo: para bloquear cadastros de fato, desative “Allow new users to sign up” no painel do Supabase (Auth → Providers)." />
+      <Toggle
+        checked={settings.claude_admin_only ?? true}
+        onChange={(v) => setSettings({ ...settings, claude_admin_only: v })}
+        label="Claude só para mim"
+        description="Ligado: só você vê e usa o Claude (chat, Companion, @Claude e Claude na call). Para as outras pessoas o Claude nem aparece, e o servidor bloqueia. Se você chamar o @Claude num canal ou numa call, quem estiver ali vê ou ouve a resposta."
+      />
+      <Toggle
+        checked={settings.calls_everyone ?? true}
+        onChange={(v) => setSettings({ ...settings, calls_everyone: v })}
+        label="Calls nos servidores de outras pessoas"
+        description="Ligado: qualquer servidor faz calls, como no Discord. Todas as calls do NEXUS usam a mesma franquia gratuita da LiveKit (5.000 minutos-pessoa por mês; quando acaba, as calls param até o mês virar). Desligado: calls só nos servidores do administrador."
+      />
       <div className="flex justify-end">
         <Button onClick={() => void save()}>Salvar</Button>
       </div>
+      {settings.claude_admin_only ?? true ? null : (
       <div>
         <div className="text-[12px] font-semibold uppercase tracking-wide text-fg-3 mb-2 flex items-center gap-1.5">
           <Shield className="size-3.5" /> Liberação individual do Claude
@@ -477,6 +492,7 @@ function AdminTab() {
         ))}
         <p className="text-[12px] text-fg-3">Membros com o cargo “Usar o Claude” nos seus servidores já têm acesso automaticamente.</p>
       </div>
+      )}
     </div>
   );
 }

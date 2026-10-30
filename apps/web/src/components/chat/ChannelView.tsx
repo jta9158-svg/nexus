@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Hash, Lock, MoreHorizontal, Settings, UserPlus } from 'lucide-react';
 import { useApp } from '../../store/app';
-import { useSession } from '../../store/session';
+import { useClaudeVisible, useSession } from '../../store/session';
 import { hasPerm } from '../../lib/permissions';
 import { Avatar, EmptyState, IconButton, StatusDot } from '../ui';
 import { ViewHeader } from '../layout/ViewHeader';
@@ -13,6 +13,7 @@ export function ChannelView({ serverId, channelId }: { serverId: string; channel
   const perms = useApp((s) => s.myPerms[serverId]);
   const setModal = useApp((s) => s.setModal);
   const markRead = useApp((s) => s.markRead);
+  const claudeVisible = useClaudeVisible();
 
   useEffect(() => {
     markRead(channelId);
@@ -62,7 +63,7 @@ export function ChannelView({ serverId, channelId }: { serverId: string; channel
           </div>
         }
       />
-      {channel.claude_enabled && hasPerm(perms, 'use_claude') ? <ClaudeAskBox target={channelId} serverId={serverId} /> : null}
+      {channel.claude_enabled && claudeVisible && hasPerm(perms, 'use_claude') ? <ClaudeAskBox target={channelId} serverId={serverId} /> : null}
       <Composer target={channelId} kind="channel" serverId={serverId} placeholder={`Conversar em #${channel.name}`} />
     </div>
   );

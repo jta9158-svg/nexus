@@ -7,7 +7,7 @@ import { playPing, setAppBadge, showSystemNotification } from './notify';
 import { platformLabel } from './platform';
 import { useApp } from '../store/app';
 import { useMessages } from '../store/messages';
-import type { Channel, Member, MemberRole, Message, NotificationRow, PresenceState, Role, Server } from '../types/db';
+import type { Channel, ChannelCategory, Member, MemberRole, Message, NotificationRow, PresenceState, Role, Server } from '../types/db';
 
 type VoiceState = NonNullable<PresenceState['voice']>;
 
@@ -109,6 +109,12 @@ function subscribeServer(serverId: string) {
       )
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'channels', filter: `server_id=eq.${serverId}` }, (p) =>
         useApp.getState().upsertChannel(p.new as unknown as Channel),
+      )
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'channel_categories', filter: `server_id=eq.${serverId}` }, (p) =>
+        useApp.getState().upsertCategory(p.new as unknown as ChannelCategory),
+      )
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'channel_categories', filter: `server_id=eq.${serverId}` }, (p) =>
+        useApp.getState().upsertCategory(p.new as unknown as ChannelCategory),
       )
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'roles', filter: `server_id=eq.${serverId}` }, (p) =>
         useApp.getState().upsertRole(p.new as unknown as Role),
@@ -249,6 +255,10 @@ export function startRealtime(userId: string): void {
     .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'channels' }, (p) => {
       const id = (p.old as { id?: string }).id;
       if (id) app().removeChannel(id);
+    })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'channel_categories' }, (p) => {
+      const id = (p.old as { id?: string }).id;
+      if (id) app().removeCategory(id);
     })
     .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'roles' }, (p) => {
       const id = (p.old as { id?: string }).id;

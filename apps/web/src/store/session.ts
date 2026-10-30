@@ -104,3 +104,12 @@ export const useSession = create<SessionState>((set, get) => ({
     if (get().session) void get().loadProfile();
   },
 }));
+
+/**
+ * O Claude aparece no app para esta pessoa? Com "Claude só para mim" ligado
+ * (padrão), só o administrador do NEXUS vê o Claude AI, o Companion, o
+ * @Claude e o botão de chamar o Claude na call. O servidor também bloqueia.
+ */
+export function useClaudeVisible(): boolean {
+  return useSession((s) => s.isAdmin || !(s.appSettings?.claude_admin_only ?? true));
+}

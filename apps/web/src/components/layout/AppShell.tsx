@@ -22,14 +22,17 @@ import { FilesView } from '../files/FilesView';
 import { RobloxView } from '../roblox/RobloxView';
 import { OverviewView } from '../overview/OverviewView';
 import { SearchModal } from '../overlays/SearchModal';
-import { ChannelModal, CreateServerModal, InviteModal, JoinServerModal, NewDmModal, ProfileModal, useInviteFromUrl } from '../overlays/ServerModals';
+import { CategoryModal, ChannelModal, CreateServerModal, InviteModal, JoinServerModal, NewDmModal, NicknameModal, ProfileModal, useInviteFromUrl } from '../overlays/ServerModals';
 import { ServerSettingsModal } from '../overlays/ServerSettingsModal';
 import { SettingsModal } from '../overlays/SettingsModal';
 import { NotificationsPopover } from '../overlays/NotificationsPopover';
 import { useIsMobile } from '../../lib/useMedia';
+import { useClaudeVisible } from '../../store/session';
 
 function MainView() {
   const view = useApp((s) => s.view);
+  const claudeVisible = useClaudeVisible();
+  if ((view.kind === 'claude' || view.kind === 'companion') && !claudeVisible) return <OverviewView />;
   switch (view.kind) {
     case 'home':
       return <OverviewView />;
@@ -174,6 +177,7 @@ function MobileTabBar() {
   const setNotif = useApp((s) => s.setNotificationsOpen);
   const setModal = useApp((s) => s.setModal);
   const unread = useApp((s) => s.notifications.filter((n) => !n.read_at).length);
+  const claudeVisible = useClaudeVisible();
   const me = useSession((s) => s.me);
   const item = (active: boolean, label: string, icon: React.ReactNode, onClick: () => void, badge?: number) => (
     <button onClick={onClick} className={cx('flex-1 flex flex-col items-center justify-center gap-0.5 text-[10.5px] h-full relative', active ? 'text-fg' : 'text-fg-3')} aria-label={label}>
@@ -187,7 +191,7 @@ function MobileTabBar() {
       <div className="h-[58px] flex">
         {item(false, 'Servidores', <Home className="size-5" />, () => setMobileNav(true))}
         {item(view.kind === 'dm' || view.kind === 'home', 'Início', <MessageCircle className="size-5" />, () => selectHome())}
-        {item(view.kind === 'claude' || view.kind === 'companion', 'Claude', <Sparkles className="size-5" />, () => openView({ kind: 'claude' }))}
+        {claudeVisible ? item(view.kind === 'claude' || view.kind === 'companion', 'Claude', <Sparkles className="size-5" />, () => openView({ kind: 'claude' })) : null}
         {item(false, 'Avisos', <Bell className="size-5" />, () => setNotif(true), unread)}
         {item(false, 'Você', me ? <UserRound className="size-5" /> : <UserRound className="size-5" />, () => setModal({ kind: 'settings' }))}
       </div>
@@ -269,6 +273,8 @@ export function AppShell() {
       <JoinServerModal />
       <InviteModal />
       <ChannelModal />
+      <CategoryModal />
+      <NicknameModal />
       <NewDmModal />
       <ProfileModal />
       <ServerSettingsModal />

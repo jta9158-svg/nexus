@@ -15,7 +15,7 @@ import {
   Users,
 } from 'lucide-react';
 import { useApp, displayNameFor } from '../../store/app';
-import { useSession } from '../../store/session';
+import { useClaudeVisible, useSession } from '../../store/session';
 import { useCompanion } from '../../store/companion';
 import { sb, currentConfig } from '../../lib/supabase';
 import { onConnectionChange } from '../../lib/realtime';
@@ -104,7 +104,9 @@ export function OverviewView() {
       .upsert({ user_id: userId, data: { ...((data?.data as object) ?? {}), overview_hidden: next } });
   };
 
-  const show = (w: Widget) => !hidden.includes(w);
+  const claudeVisible = useClaudeVisible();
+  const members = useApp((s) => s.members);
+  const show = (w: Widget) => !hidden.includes(w) && (claudeVisible || (w !== 'duvidas' && w !== 'tarefas'));
   const pendingQ = companion.questions.filter((q) => q.status === 'pendente');
   const activeTasks = companion.tasks.filter((t) => ['executando', 'aguardando', 'aguardando_confirmacao', 'bloqueada'].includes(t.status));
   const important = notifications.filter((n) => !n.read_at).slice(0, 5);
@@ -145,7 +147,11 @@ export function OverviewView() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <QuickStat icon={<ServerIcon className="size-4" />} label="Servidores" value={servers.length} />
             <QuickStat icon={<Gamepad2 className="size-4" />} label="Projetos ativos" value={projects.filter((p) => p.status === 'ativo').length} />
-            <QuickStat icon={<Sparkles className="size-4" />} label="Tarefas do Claude" value={activeTasks.length} onClick={() => openView({ kind: 'companion' })} />
+            {claudeVisible ? (
+              <QuickStat icon={<Sparkles className="size-4" />} label="Tarefas do Claude" value={activeTasks.length} onClick={() => openView({ kind: 'companion' })} />
+            ) : (
+              <QuickStat icon={<Users className="size-4" />} label="Pessoas nos servidores" value={new Set(Object.values(members).flat().map((m) => m.user_id)).size} />
+            )}
             <QuickStat icon={<Bell className="size-4" />} label="Notificações novas" value={notifications.filter((n) => !n.read_at).length} />
           </div>
 

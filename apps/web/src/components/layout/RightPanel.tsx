@@ -9,6 +9,7 @@ import { formatCompact, formatNumber, formatRelative } from '../../lib/format';
 import { hasPerm } from '../../lib/permissions';
 import type { Member, PresenceState, RobloxStat } from '../../types/db';
 import { Avatar, Button, Card, ClaudeAvatar, cx, IconButton, StatusDot } from '../ui';
+import { useClaudeVisible } from '../../store/session';
 
 function CallCard({ serverId }: { serverId: string }) {
   const channels = useApp((s) => s.channels[serverId]) ?? [];
@@ -252,11 +253,12 @@ function MembersCard({ serverId }: { serverId: string }) {
 export function RightPanel() {
   const view = useApp((s) => s.view);
   const serverId = view.kind === 'channel' ? view.serverId : null;
+  const claudeVisible = useClaudeVisible();
   if (!serverId) return null;
   return (
     <aside className="h-full overflow-y-auto nx-scroll space-y-3 pb-3" aria-label="Painel da equipe">
       <CallCard serverId={serverId} />
-      <ClaudeCard />
+      {claudeVisible ? <ClaudeCard /> : null}
       <RobloxCard serverId={serverId} />
       <MembersCard serverId={serverId} />
     </aside>

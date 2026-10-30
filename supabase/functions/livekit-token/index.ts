@@ -24,6 +24,10 @@ Deno.serve(async (req) => {
     const canJoin = await rpc<boolean>(admin, '_can_join_voice', { p_channel: channel_id, p_user: user.id });
     if (!canJoin) throw new HttpError(403, 'Você não tem permissão para entrar nesta call.');
     const { data: channel } = await admin.from('channels').select('id, server_id, name').eq('id', channel_id).single();
+    const allowed = await rpc<boolean>(admin, '_calls_allowed', { p_server: channel!.server_id });
+    if (allowed === false) {
+      throw new HttpError(403, 'O administrador do NEXUS deixou as calls só para os servidores dele (para não gastar a franquia gratuita).');
+    }
     const perms = await rpc<string[]>(admin, '_user_permissions', { p_server: channel!.server_id, p_user: user.id });
     const has = (p: string) => perms.includes('admin') || perms.includes(p);
     const { data: profile } = await admin.from('profiles').select('display_name').eq('id', user.id).single();

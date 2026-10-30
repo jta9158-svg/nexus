@@ -29,8 +29,9 @@ jobs:
           deno check supabase/functions/*/index.ts
           deno test --allow-net --allow-env supabase/functions/tests/
 
-      - name: App web (tipos + build)
+      - name: App web (tipos + regras de organização dos canais + build)
         working-directory: apps/web
         run: |
           npm ci
+          node --experimental-strip-types tests/layout.test.mjs
           npm run build

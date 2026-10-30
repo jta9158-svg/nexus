@@ -32,12 +32,18 @@ const profiles = [
   { id: MAR, username: 'marina', display_name: 'Marina', avatar_url: null, bio: null, accent_color: null, created_at: iso(70000) },
   { id: JUR, username: 'jurassic', display_name: 'Jurassic', avatar_url: null, bio: null, accent_color: null, created_at: iso(60000) },
 ];
-const server = { id: S1, name: 'ALPHA - Templo da Magia', description: null, icon_url: null, banner_url: null, owner_id: ME, is_public: false, created_at: iso(90000) };
+const server = { id: S1, name: 'ALPHA - Templo da Magia', description: null, icon_url: null, banner_url: null, owner_id: ME, is_public: false, system_channel_id: null, welcome_messages: true, created_at: iso(90000) };
+const K = (id) => `ffffffff-ffff-4fff-8fff-${String(id).padStart(12, '0')}`;
+const categories = [
+  { id: K(1), server_id: S1, name: 'Informações', position: 0, created_at: iso(90000) },
+  { id: K(2), server_id: S1, name: 'Canais de texto', position: 1, created_at: iso(90000) },
+  { id: K(3), server_id: S1, name: 'Canais de voz', position: 2, created_at: iso(90000) },
+];
 const textNames = ['geral', 'anúncios', 'desenvolvimento', 'ideias', 'bugs', 'equipe'];
 const voiceNames = [['Geral', 8], ['Call da Equipe', 12], ['Trabalho', 6], ['Reuniões', 4]];
 const channels = [
-  ...textNames.map((n, i) => ({ id: ch(n, i + 1), server_id: S1, name: n, kind: 'text', topic: n === 'geral' ? 'Chat da equipe, mensagens, arquivos e comunicação.' : null, position: i, is_private: false, user_limit: null, claude_enabled: true, created_at: iso(90000) })),
-  ...voiceNames.map(([n, lim], i) => ({ id: ch(n, 20 + i), server_id: S1, name: n, kind: 'voice', topic: null, position: 10 + i, is_private: false, user_limit: lim, claude_enabled: true, created_at: iso(90000) })),
+  ...textNames.map((n, i) => ({ id: ch(n, i + 1), server_id: S1, category_id: n === 'anúncios' ? K(1) : K(2), name: n, kind: 'text', topic: n === 'geral' ? 'Chat da equipe, mensagens, arquivos e comunicação.' : null, position: i, is_private: false, user_limit: null, claude_enabled: true, created_at: iso(90000) })),
+  ...voiceNames.map(([n, lim], i) => ({ id: ch(n, 20 + i), server_id: S1, category_id: K(3), name: n, kind: 'voice', topic: null, position: 10 + i, is_private: false, user_limit: lim, claude_enabled: true, created_at: iso(90000) })),
 ];
 const GERAL = channels[0].id;
 const roles = [
@@ -56,6 +62,7 @@ const msg = (id, author, content, minAgo, extra = {}) => ({
   channel_id: GERAL, server_id: S1, dm_thread_id: null, author_id: author, author_kind: 'user', content,
   attachments: [], mentions: [], mentions_claude: false, mentions_everyone: false, reply_to: null, meta: {}, edited_at: null, created_at: iso(minAgo), ...extra,
 });
+const joinMsg = { ...{ id: 'eeeeeeee-eeee-4eee-8eee-000000000099', channel_id: GERAL, server_id: S1, dm_thread_id: null, author_id: JUR, author_kind: 'system', content: 'entrou no servidor.', attachments: [], mentions: [], mentions_claude: false, mentions_everyone: false, reply_to: null, meta: { type: 'join' }, edited_at: null, created_at: iso(1490) } };
 const messages = [
   msg(1, ME, 'Galera, acabei de finalizar o sistema de combate do ALPHA.\nFalta só ajustar alguns efeitos e a UI mobile.\n@matheus dá uma olhada no mapa quando puder.', 1500, { mentions: [MAT] }),
   msg(2, MAT, 'Beleza, vi aqui! O mapa tá insano, vou ajustar a iluminação e te mando o print ainda hoje.', 1497),
@@ -63,6 +70,7 @@ const messages = [
   msg(4, ME, 'Boa! Agora só falta o trailer mesmo kkkk\n\nVamos deixar surreal. 👋', 1492),
   msg(5, null, '✦ Resumo do projeto ALPHA:\n\n- [x] Todos os poderes funcionando\n- [x] UI completa\n- [x] Sistema de inventário e loja\n- [x] Falta revisar o mapa inicial e katana/manopla\n\nQuer que eu organize uma task list com as próximas etapas?', 200, { author_kind: 'claude', meta: { status: 'done' } }),
 ];
+messages.splice(3, 0, joinMsg);
 const notifications = [
   { id: 'n1', user_id: ME, kind: 'mention', title: 'Matheus mencionou você em #geral', body: 'O mapa tá insano', link: { server_id: S1, channel_id: GERAL }, read_at: null, created_at: iso(30) },
 ];
@@ -112,12 +120,18 @@ function tableData(table, params) {
     case 'profiles':
       return params.get('id')?.startsWith('eq.') ? profiles.filter((p) => p.id === eq('id')) : profiles;
     case 'app_settings':
-      return [{ signup_open: true, claude_model: 'claude-sonnet-5-5', claude_task_model: 'claude-opus-5-5', claude_daily_tokens_per_user: 300000, claude_monthly_budget_usd: 50, companion_max_concurrent_tasks: 2 }];
+      return [{ signup_open: true, claude_model: 'claude-sonnet-5-5', claude_task_model: 'claude-opus-5-5', claude_daily_tokens_per_user: 300000, claude_monthly_budget_usd: 50, companion_max_concurrent_tasks: 2, voice_agent_ready: true, calls_everyone: true, claude_admin_only: true }];
     case 'server_members':
       if (params.get('user_id')) return [{ joined_at: iso(90000), servers: server }];
       return members;
     case 'channels':
       return channels;
+    case 'channel_categories':
+      return categories;
+    case 'invites':
+      return [{ code: 'aB3dE5fG7h', server_id: S1, created_by: ME, max_uses: null, uses: 3, expires_at: null, created_at: iso(100) }];
+    case 'server_join_pins':
+      return [{ pin: '482913' }];
     case 'roles':
       return roles;
     case 'member_roles':
@@ -155,31 +169,33 @@ function tableData(table, params) {
   }
 }
 
-function rpcData(fn) {
+function rpcData(fn, opts) {
   switch (fn) {
     case 'unread_summary':
       return [{ target_id: channels[2].id, kind: 'channel', server_id: S1, unread: 3, mentions: 0 }];
     case 'my_claude_quota':
       return [quota];
     case 'my_permissions':
-      return ['admin'];
+      return opts.admin ? ['admin'] : ['send_messages', 'attach_files', 'connect_voice', 'speak', 'video', 'share_screen', 'create_invites', 'view_projects', 'view_files', 'view_roblox', 'use_claude'];
     case 'is_app_admin':
-      return true;
+      return !!opts.admin;
     case 'mark_read':
       return null;
+    case 'preview_invite':
+      return [{ server_id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', name: 'Grupo dos Amigos', description: 'Jogos, memes e calls toda sexta.', icon_url: null, banner_url: null, member_count: 12, valid: true, reason: null, requires_pin: true, already_member: false }];
     default:
       return null;
   }
 }
 
-async function mockSupabase(page) {
+async function mockSupabase(page, opts = { admin: true }) {
   await page.route(`${SB}/**`, async (route) => {
     const req = route.request();
     const url = new URL(req.url());
     const single = (req.headers()['accept'] || '').includes('vnd.pgrst.object');
     let body = null;
     if (url.pathname.startsWith('/rest/v1/rpc/')) {
-      body = rpcData(url.pathname.split('/').pop());
+      body = rpcData(url.pathname.split('/').pop(), opts);
       if (single && Array.isArray(body)) body = body[0] ?? null;
     } else if (url.pathname.startsWith('/rest/v1/')) {
       const data = tableData(url.pathname.split('/').pop(), url.searchParams);
@@ -238,6 +254,38 @@ for (const s of shots) {
     await page.getByRole('tab', { name: /Modo e voz/ }).or(page.getByRole('button', { name: /Modo e voz/ })).first().click();
     await page.waitForTimeout(600);
     await page.screenshot({ path: join(out, 'desktop-companion-modo.png'), fullPage: true });
+    // Estilo Discord: menu do servidor, convite com PIN, configurações, criar servidor, entrar com link + PIN
+    await page.getByRole('button', { name: /Canais de texto/ }).first().waitFor({ timeout: 3000 }).catch(() => {});
+    await page.locator('[aria-haspopup="menu"]').first().click();
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: join(out, 'desktop-menu-servidor.png') });
+    await page.getByRole('menuitem', { name: 'Convidar pessoas' }).click();
+    await page.waitForTimeout(1500);
+    await page.screenshot({ path: join(out, 'desktop-convite.png') });
+    const pinShown = await page.getByText('482913').count();
+    await page.keyboard.press('Escape');
+    await page.locator('[aria-haspopup="menu"]').first().click();
+    await page.getByRole('menuitem', { name: 'Configurações do servidor' }).click();
+    await page.waitForTimeout(600);
+    await page.getByRole('tab', { name: 'Convites' }).or(page.getByRole('button', { name: 'Convites', exact: true })).first().click();
+    await page.waitForTimeout(900);
+    await page.screenshot({ path: join(out, 'desktop-config-convites.png'), fullPage: true });
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Adicionar um servidor' }).click();
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: join(out, 'desktop-criar-servidor.png') });
+    await page.getByRole('button', { name: /^Jogos/ }).click();
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: join(out, 'desktop-criar-servidor-nome.png') });
+    await page.keyboard.press('Escape');
+    await page.evaluate(() => {
+      location.hash = 'convite=aB3dE5fG7h';
+    });
+    await page.waitForTimeout(1500);
+    await page.screenshot({ path: join(out, 'desktop-entrar-pin.png') });
+    const pinField = await page.getByLabel('PIN do servidor').count();
+    await page.keyboard.press('Escape');
+    console.log(`discord: PIN no convite ${pinShown ? 'visível' : 'NÃO visível'} · campo de PIN ao entrar ${pinField ? 'visível' : 'NÃO visível'}`);
     await page.getByRole('button', { name: 'Início e mensagens privadas' }).click();
     await page.waitForTimeout(1200);
     await page.screenshot({ path: join(out, 'desktop-inicio.png') });
@@ -248,6 +296,48 @@ for (const s of shots) {
     await page.screenshot({ path: join(out, 'iphone-menu.png') });
   }
   console.log(`${name}: ${errors.length ? 'ERROS: ' + errors.join(' | ') : 'ok'}`);
+  await ctx.close();
+}
+
+// Pessoa comum (não é a administradora): o Claude não aparece em lugar nenhum.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1536, height: 1024 }, deviceScaleFactor: 1, locale: 'pt-BR', colorScheme: 'dark' });
+  await ctx.addInitScript(
+    ({ url, sess, server }) => {
+      localStorage.setItem('nexus.serverConfig.v1', JSON.stringify({ supabaseUrl: url, supabaseAnonKey: 'sb_publishable_teste' }));
+      localStorage.setItem('nexus.auth.v1', JSON.stringify(sess));
+      localStorage.setItem('nexus.lastServer.v1', server);
+      localStorage.setItem('nexus.installDismissed', '1');
+    },
+    { url: SB, sess: session, server: S1 },
+  );
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await mockSupabase(page, { admin: false });
+  await page.goto('http://localhost:4319/index.html');
+  await page.waitForTimeout(2500);
+  await page.screenshot({ path: join(out, 'desktop-membro.png') });
+  const claudeItems = await page.getByText(/Claude AI|Claude Companion|Perguntar ao Claude|Chamar o Claude/).count();
+  console.log(`desktop-membro: ${errors.length ? 'ERROS: ' + errors.join(' | ') : 'ok'} · Claude ${claudeItems ? 'VISÍVEL (erro)' : 'escondido'}`);
+  await ctx.close();
+}
+
+// Convite aberto antes do login: mostra o servidor e já abre em "Criar conta".
+{
+  const ctx = await browser.newContext({ ...devices['iPhone 15 Pro'], locale: 'pt-BR', colorScheme: 'dark' });
+  await ctx.addInitScript(({ url }) => {
+    localStorage.setItem('nexus.serverConfig.v1', JSON.stringify({ supabaseUrl: url, supabaseAnonKey: 'sb_publishable_teste' }));
+  }, { url: SB });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await mockSupabase(page);
+  await page.goto('http://localhost:4319/index.html#convite=aB3dE5fG7h');
+  await page.waitForTimeout(2000);
+  await page.screenshot({ path: join(out, 'iphone-convite-login.png') });
+  const banner = await page.getByText('Você foi convidado para entrar em').count();
+  console.log(`iphone-convite-login: ${errors.length ? 'ERROS: ' + errors.join(' | ') : 'ok'} · convite ${banner ? 'visível' : 'NÃO visível'}`);
   await ctx.close();
 }
 

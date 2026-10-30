@@ -1,5 +1,5 @@
-import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { AlertCircle, Check, Pencil, Trash2, X } from 'lucide-react';
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { AlertCircle, ArrowRight, Check, Pencil, Trash2, X } from 'lucide-react';
 import { useApp, displayNameFor, roleColorFor } from '../../store/app';
 import { useMessages, type TargetKind } from '../../store/messages';
 import { useSession } from '../../store/session';
@@ -18,6 +18,44 @@ function DateDivider({ iso }: { iso: string }) {
       <div className="flex-1 h-px bg-line" />
       <span className="text-[12px] font-medium text-fg-3">{formatDateLong(iso)}</span>
       <div className="flex-1 h-px bg-line" />
+    </div>
+  );
+}
+
+// Aviso "Fulano entrou no servidor" (mensagem do sistema, como no Discord).
+const JOIN_PHRASES: Array<(name: ReactNode) => ReactNode> = [
+  (n) => <>{n} entrou no servidor.</>,
+  (n) => <>{n} chegou! Deem as boas-vindas.</>,
+  (n) => <>Que bom ter você aqui, {n}!</>,
+  (n) => <>{n} acabou de chegar.</>,
+  (n) => <>{n} apareceu por aqui. Bem-vindo(a)!</>,
+];
+
+function JoinNotice({ m, serverId }: { m: Message; serverId: string | null }) {
+  const setModal = useApp((s) => s.setModal);
+  useApp((s) => (m.author_id ? s.profiles[m.author_id] : undefined));
+  useEffect(() => {
+    if (m.author_id) void useApp.getState().ensureProfiles([m.author_id]);
+  }, [m.author_id]);
+  let h = 0;
+  for (const ch of m.id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  const name = (
+    <button
+      className="font-semibold text-fg hover:underline"
+      onClick={() => m.author_id && setModal({ kind: 'profile', userId: m.author_id, serverId })}
+    >
+      {displayNameFor(m.author_id, serverId)}
+    </button>
+  );
+  return (
+    <div className="flex items-center gap-3.5 px-4 sm:px-5 py-1.5 mt-1 hover:bg-white/[0.018]">
+      <div className="w-10 shrink-0 flex justify-center">
+        <ArrowRight className="size-4 text-success" />
+      </div>
+      <p className="text-[14px] text-fg-2 min-w-0">
+        {JOIN_PHRASES[h % JOIN_PHRASES.length](name)}
+        <span className="text-[11.5px] text-fg-3 ml-2 tabular-nums">{formatMessageTime(m.created_at)}</span>
+      </p>
     </div>
   );
 }
@@ -69,6 +107,8 @@ const MessageItem = memo(function MessageItem({
     if (draft.trim() && draft !== m.content) await edit(m.id, draft);
     setEditing(false);
   };
+
+  if (isSystem && (m.meta as { type?: string } | null)?.type === 'join') return <JoinNotice m={m} serverId={serverId} />;
 
   return (
     <div

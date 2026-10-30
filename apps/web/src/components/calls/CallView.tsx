@@ -24,7 +24,7 @@ import {
   VolumeX,
 } from 'lucide-react';
 import { useApp, displayNameFor } from '../../store/app';
-import { useSession } from '../../store/session';
+import { useClaudeVisible, useSession } from '../../store/session';
 import { SCREEN_QUALITIES, useCall, type CallParticipant } from '../../store/call';
 import { canShareScreen, desktop, isIOS } from '../../lib/platform';
 import type { DesktopScreenSource } from '../../types/desktop';
@@ -288,6 +288,7 @@ export function CallView({ serverId, channelId }: { serverId: string; channelId:
   const presence = useApp((s) => s.presence[serverId]);
   const profiles = useApp((s) => s.profiles);
   const voiceReady = useSession((s) => !!s.appSettings?.voice_agent_ready);
+  const claudeVisible = useClaudeVisible();
   const call = useCall();
   const [qualityMenu, setQualityMenu] = useState(false);
   const inThis = call.channelId === channelId && (call.status === 'connected' || call.status === 'reconnecting');
@@ -407,7 +408,7 @@ export function CallView({ serverId, channelId }: { serverId: string; channelId:
               <ControlButton label="Tirar o Claude da call" active onClick={() => void call.removeClaude()} disabled={call.claudeBusy}>
                 <BotOff className="size-5" />
               </ControlButton>
-            ) : (
+            ) : !claudeVisible ? null : (
               <ControlButton
                 label={voiceReady ? 'Chamar o Claude para a call' : 'Claude na call: o administrador ainda não ativou o serviço de voz'}
                 disabled={!voiceReady || call.claudeBusy}
