@@ -317,6 +317,37 @@ async function main() {
   ok((await asUser(B, `select 1 from public.companion_logs`)).rows.length === 0, 'a pessoa pode excluir os próprios registros');
 
   // ------------------------------------------------------------------
+  console.log('\n• Claude na call (voz)');
+  const voice = chans.find((c) => c.kind === 'voice').id;
+  const reason0 = one(await service(`select public._voice_invite_check($1, $2) as r`, [voice, B])).r;
+  ok(/não foi ativado/.test(reason0 || ''), 'sem o serviço de voz ativado, ninguém chama o Claude', reason0);
+  await service(`update public.app_settings set voice_agent_ready = true`);
+  const reason1 = one(await service(`select public._voice_invite_check($1, $2) as r`, [voice, B])).r;
+  ok(/Ouvir calls/.test(reason1 || ''), 'precisa liberar "ouvir" e "falar" antes (permissões separadas)', reason1);
+  await asUser(B, `select public.companion_set_permission('ouvir_call', true)`);
+  await asUser(B, `select public.companion_set_permission('falar_call', true)`);
+  ok(one(await service(`select public._voice_invite_check($1, $2) as r`, [voice, B])).r === null, 'com cargo e permissões, pode chamar o Claude');
+  ok(/cargo/.test(one(await service(`select public._voice_invite_check($1, $2) as r`, [voice, D])).r || ''), 'membro sem "usar o Claude" não chama');
+  ok(/permissão para entrar/.test(one(await service(`select public._voice_invite_check($1, $2) as r`, [voice, C])).r || ''), 'quem não é membro não chama (Teste J)');
+  ok(/não encontrado/.test(one(await service(`select public._voice_invite_check($1, $2) as r`, [geral, B])).r || ''), 'canal de texto não aceita voz');
+  ok(!!(await denied(B, `select public._voice_invite_check($1, $2)`, [voice, B])), 'checagem só roda no servidor');
+  const vs = one(await service(`insert into public.voice_sessions (server_id, channel_id, room, inviter_id) values ($1, $2, $3, $4) returning id`, [S, voice, `nexus-${voice}`, B])).id;
+  ok(!!(await denied(B, `insert into public.voice_sessions (server_id, channel_id, room, inviter_id) values ($1, $2, $3, $4)`, [S, voice, `nexus-x`, B])), 'app não cria sessão de voz sozinho');
+  ok(!!(await service(`insert into public.voice_sessions (server_id, channel_id, room, inviter_id) values ($1, $2, $3, $4)`, [S, voice, `nexus-${voice}`, A]).then(() => false).catch(() => true)), 'no máximo um Claude por canal de voz');
+  ok((await asUser(D, `select 1 from public.voice_sessions where id = $1`, [vs])).rows.length === 1, 'membros veem que o Claude está na call');
+  ok((await asUser(C, `select 1 from public.voice_sessions where id = $1`, [vs])).rows.length === 0, 'quem não é membro não vê');
+  ok(!!(await denied(B, `update public.voice_sessions set status = 'encerrada' where id = $1`, [vs])) ||
+     one(await service(`select status from public.voice_sessions where id = $1`, [vs])).status === 'chamando', 'app não altera a sessão de voz');
+  ok(one(await service(`select public._voice_can_remove($1, $2) as x`, [voice, B])).x === true, 'quem chamou pode tirar o Claude');
+  ok(one(await service(`select public._voice_can_remove($1, $2) as x`, [voice, F])).x === false, 'outro membro comum não tira');
+  ok(one(await service(`select public._voice_can_remove($1, $2) as x`, [voice, A])).x === true, 'dono do servidor tira (moderação)');
+  await asUser(B, `update public.companion_settings set voice_option = 'voz2', voice_speed = 'rapida', voice_greeting = false where user_id = $1`, [B]);
+  const vset = one(await asUser(B, `select voice_option, voice_speed, voice_greeting from public.companion_settings where user_id = $1`, [B]));
+  ok(vset.voice_option === 'voz2' && vset.voice_speed === 'rapida' && vset.voice_greeting === false, 'opções de voz salvas pela pessoa');
+  ok(!!(await denied(B, `update public.companion_settings set voice_speed = 'turbo' where user_id = $1`, [B])), 'opção de voz inválida é recusada');
+  await service(`update public.voice_sessions set status = 'encerrada', ended_at = now() where id = $1`, [vs]);
+
+  // ------------------------------------------------------------------
   console.log('\n• Tempo real (canais privados de presença)');
   ok((await topic(B, `server:${S}`)) === true, 'membro entra no canal de presença do servidor');
   ok((await topic(C, `server:${S}`)) === false, 'quem não é membro não entra (não vê quem está online/na call)');

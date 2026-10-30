@@ -1,5 +1,6 @@
 # Lança uma versão: instalador do Windows (.exe) e app Android (.apk) na
-# Release do GitHub. Dispare criando uma tag:  git tag v0.2.0 && git push --tags
+# Release do GitHub. Dispare em Actions → "Lançar versão" → Run workflow
+# (informe a versão, ex.: 0.2.0) ou criando uma tag v0.2.0.
 name: Lançar versão
 
 on:
@@ -84,19 +85,25 @@ jobs:
           else
             echo "CSC_IDENTITY_AUTO_DISCOVERY=false" >> "$GITHUB_ENV"
           fi
-      - name: Gerar e publicar o instalador
+      - name: Gerar o instalador
         working-directory: apps/desktop
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NEXUS_VERSION: ${{ needs.web.outputs.version }}
           NEXUS_GH_OWNER: ${{ github.repository_owner }}
           NEXUS_GH_REPO: ${{ github.event.repository.name }}
         run: |
           npm ci
-          npm run release:win
+          npm run dist:win
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: |
+            apps/desktop/release/NEXUS-Setup.exe
+            apps/desktop/release/NEXUS-Setup.exe.blockmap
+            apps/desktop/release/latest.yml
 
   android:
-    needs: [web, windows]
+    needs: web
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -137,15 +144,43 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           chmod +x gradlew
+          mkdir -p "$RUNNER_TEMP/out"
           if [ -n "$ANDROID_KEYSTORE_FILE" ]; then
             ./gradlew assembleRelease --no-daemon
-            cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/NEXUS.apk"
+            cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/out/NEXUS.apk"
           else
             ./gradlew assembleDebug --no-daemon
-            cp app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/NEXUS.apk"
+            cp app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/out/NEXUS.apk"
           fi
-      - name: Anexar o APK à Release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: ${{ runner.temp }}/out/NEXUS.apk
+
+  publicar:
+    needs: [web, windows, android]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Arquivos da versão
+        run: ls -la dist
+      - name: Publicar a Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ needs.web.outputs.version }}
-          files: ${{ runner.temp }}/NEXUS.apk
+          target_commitish: ${{ github.sha }}
+          name: NEXUS ${{ needs.web.outputs.version }}
+          make_latest: 'true'
+          body: |
+            Baixe o NEXUS:
+            - **Windows 10/11:** `NEXUS-Setup.exe` (se aparecer "O Windows protegeu o computador", clique em *Mais informações → Executar assim mesmo*).
+            - **Android:** `NEXUS.apk` — ou instale pelo Chrome a partir da página de download.
+            - **iPhone e iPad:** abra a página de download no Safari e use *Compartilhar → Adicionar à Tela de Início*.
+          files: |
+            dist/NEXUS-Setup.exe
+            dist/NEXUS-Setup.exe.blockmap
+            dist/latest.yml
+            dist/NEXUS.apk
