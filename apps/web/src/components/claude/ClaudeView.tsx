@@ -126,7 +126,7 @@ export function ClaudeView({ conversationId }: { conversationId?: string | null 
               <Spinner />
             </div>
           ) : conversations.length === 0 ? (
-            <p className="text-sm text-fg-3 px-2 py-3">Suas conversas com o Claude aparecem aqui.</p>
+            <p className="text-sm text-fg-3 px-2 py-3">Suas conversas com a NEXUS IA aparecem aqui.</p>
           ) : (
             conversations.map((c) => (
               <button
@@ -178,7 +178,7 @@ export function ClaudeView({ conversationId }: { conversationId?: string | null 
                 className="bg-[#0d1118] border border-line rounded-lg px-2 h-8 text-[15px] outline-none focus:border-accent w-full max-w-md"
               />
             ) : (
-              active?.title ?? 'Claude AI'
+              active?.title ?? 'NEXUS IA'
             )
           }
           subtitle={active ? (projectName ? `Contexto: ${projectName}` : 'Sem projeto vinculado') : 'Converse por texto, envie imagens, PDFs e scripts'}
@@ -213,7 +213,7 @@ export function ClaudeView({ conversationId }: { conversationId?: string | null 
         <div ref={scroller} className="flex-1 overflow-y-auto nx-scroll">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-6">
             {!allowed && quota ? (
-              <Notice tone="warn" title="Claude indisponível para você">
+              <Notice tone="warn" title="NEXUS IA indisponível para você">
                 {quota.reason}
               </Notice>
             ) : null}
@@ -363,7 +363,7 @@ export function ClaudeView({ conversationId }: { conversationId?: string | null 
                 }}
                 rows={1}
                 disabled={!allowed}
-                placeholder={allowed ? 'Mensagem para o Claude…' : 'Claude indisponível'}
+                placeholder={allowed ? 'Mensagem para a NEXUS IA…' : 'NEXUS IA indisponível'}
                 className="flex-1 min-w-0 bg-transparent resize-none outline-none text-[15px] py-2 px-1 max-h-48 nx-scroll placeholder:text-fg-3"
                 style={{ height: Math.min(192, 24 + text.split('\n').length * 22) }}
               />
@@ -377,7 +377,7 @@ export function ClaudeView({ conversationId }: { conversationId?: string | null 
                 </IconButton>
               )}
             </div>
-            <p className="text-[11px] text-fg-3 text-center mt-2">O Claude pode errar. Confira informações importantes — ele usa só os dados que você tem permissão para ver.</p>
+            <p className="text-[11px] text-fg-3 text-center mt-2">A NEXUS IA pode errar. Confira informações importantes — ela usa só os dados que você tem permissão para ver.</p>
           </div>
         </div>
       </section>

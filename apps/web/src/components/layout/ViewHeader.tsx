@@ -34,7 +34,7 @@ export function ViewHeader({
       <div className="flex items-center gap-1 shrink-0">
         {actions}
         {rightPanel ? (
-          <IconButton label={rightOpen ? 'Esconder painel' : 'Mostrar painel (call, Claude, membros)'} active={rightOpen} className="xl:hidden" onClick={() => setRight(!rightOpen)}>
+          <IconButton label={rightOpen ? 'Esconder painel' : 'Mostrar painel (call, NEXUS IA, membros)'} active={rightOpen} className="xl:hidden" onClick={() => setRight(!rightOpen)}>
             <PanelRight className="size-5" />
           </IconButton>
         ) : null}

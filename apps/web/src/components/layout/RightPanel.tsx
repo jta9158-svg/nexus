@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BarChart3, Crown, ExternalLink, Mic, MicOff, MonitorUp, MoreHorizontal, Video, VideoOff, Volume2, AudioLines, MessageCircle } from 'lucide-react';
+import { BarChart3, Crown, ExternalLink, Mic, MicOff, MonitorUp, MoreHorizontal, Video, VideoOff, Volume2 } from 'lucide-react';
 import { useApp, displayNameFor } from '../../store/app';
 import { useCall } from '../../store/call';
 import { useSession } from '../../store/session';
@@ -8,8 +8,7 @@ import { canShareScreen } from '../../lib/platform';
 import { formatCompact, formatNumber, formatRelative } from '../../lib/format';
 import { hasPerm } from '../../lib/permissions';
 import type { Member, PresenceState, RobloxStat } from '../../types/db';
-import { Avatar, Button, Card, ClaudeAvatar, cx, IconButton, StatusDot } from '../ui';
-import { useClaudeVisible } from '../../store/session';
+import { Avatar, Button, Card, cx, IconButton, StatusDot } from '../ui';
 
 function CallCard({ serverId }: { serverId: string }) {
   const channels = useApp((s) => s.channels[serverId]) ?? [];
@@ -76,33 +75,6 @@ function CallCard({ serverId }: { serverId: string }) {
           </IconButton>
         ) : null}
       </div>
-    </Card>
-  );
-}
-
-function ClaudeCard() {
-  const quota = useApp((s) => s.claudeQuota);
-  const openView = useApp((s) => s.openView);
-  const ok = !!quota?.allowed;
-  return (
-    <Card className="p-4">
-      <div className="flex items-center gap-3">
-        <ClaudeAvatar size={36} />
-        <div className="flex-1 min-w-0">
-          <div className="text-[16px] font-semibold">Claude AI</div>
-          <div className="text-[13px] text-fg-3 flex items-center gap-1.5">
-            <StatusDot status={ok ? 'online' : 'offline'} className="size-2" />
-            {ok ? 'Liberado para você' : 'Sem acesso'}
-          </div>
-        </div>
-        <span className="size-10 rounded-full bg-violet/15 text-[#b9a6ff] flex items-center justify-center" aria-hidden>
-          <AudioLines className="size-5" />
-        </span>
-      </div>
-      <p className="text-[14px] text-fg-2 mt-3">{ok ? 'Converse com o Claude e acompanhe as tarefas dele.' : quota?.reason ?? 'Peça ao administrador para liberar o Claude para você.'}</p>
-      <Button variant="secondary" size="sm" className="mt-3" icon={<MessageCircle className="size-4" />} onClick={() => openView({ kind: 'claude' })}>
-        Abrir chat
-      </Button>
     </Card>
   );
 }
@@ -253,13 +225,13 @@ function MembersCard({ serverId }: { serverId: string }) {
 export function RightPanel() {
   const view = useApp((s) => s.view);
   const serverId = view.kind === 'channel' ? view.serverId : null;
-  const claudeVisible = useClaudeVisible();
+  const services = useApp((s) => (serverId ? !!s.servers.find((x) => x.id === serverId)?.services_enabled : false));
   if (!serverId) return null;
   return (
     <aside className="h-full overflow-y-auto nx-scroll space-y-3 pb-3" aria-label="Painel da equipe">
       <CallCard serverId={serverId} />
-      {claudeVisible ? <ClaudeCard /> : null}
-      <RobloxCard serverId={serverId} />
+
+      {services ? <RobloxCard serverId={serverId} /> : null}
       <MembersCard serverId={serverId} />
     </aside>
   );

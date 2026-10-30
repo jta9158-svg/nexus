@@ -114,7 +114,7 @@ const session = {
   user: { id: ME, email: 'jose@exemplo.com', aud: 'authenticated', role: 'authenticated', app_metadata: {}, user_metadata: {}, created_at: iso(90000) },
 };
 
-function tableData(table, params) {
+function tableData(table, params, opts = {}) {
   const eq = (k) => (params.get(k) || '').replace(/^eq\./, '');
   switch (table) {
     case 'profiles':
@@ -122,7 +122,7 @@ function tableData(table, params) {
     case 'app_settings':
       return [{ signup_open: true, claude_model: 'claude-sonnet-5-5', claude_task_model: 'claude-opus-5-5', claude_daily_tokens_per_user: 300000, claude_monthly_budget_usd: 50, companion_max_concurrent_tasks: 2, voice_agent_ready: true, calls_everyone: true, claude_admin_only: true }];
     case 'server_members':
-      if (params.get('user_id')) return [{ joined_at: iso(90000), servers: server }];
+      if (params.get('user_id')) return [{ joined_at: iso(90000), servers: { ...server, services_enabled: opts.services ?? true } }];
       return members;
     case 'channels':
       return channels;
@@ -198,7 +198,7 @@ async function mockSupabase(page, opts = { admin: true }) {
       body = rpcData(url.pathname.split('/').pop(), opts);
       if (single && Array.isArray(body)) body = body[0] ?? null;
     } else if (url.pathname.startsWith('/rest/v1/')) {
-      const data = tableData(url.pathname.split('/').pop(), url.searchParams);
+      const data = tableData(url.pathname.split('/').pop(), url.searchParams, opts);
       body = single ? data[0] ?? null : data;
     } else if (url.pathname.startsWith('/auth/v1/user')) {
       body = session.user;
@@ -240,20 +240,27 @@ for (const s of shots) {
   await page.screenshot({ path: join(out, `${name}.png`) });
   if (name === 'desktop-chat') {
     // Outras telas no desktop
+    // A IA não aparece dentro dos servidores (só no Início, para o administrador)
+    const iaInServer = await page.locator('nav, aside, div').getByRole('button', { name: /^NEXUS IA$|^NEXUS Companion$/ }).count();
+    console.log(`servidor: NEXUS IA na barra do servidor ${iaInServer ? 'VISÍVEL (erro)' : 'escondida'}`);
     for (const [label, click] of [
       ['desktop-projetos', 'Projetos'],
-      ['desktop-companion', 'Claude Companion'],
       ['desktop-roblox', 'Faturamento Roblox'],
     ]) {
       await page.getByRole('button', { name: click }).first().click();
       await page.waitForTimeout(1200);
       await page.screenshot({ path: join(out, `${label}.png`) });
     }
-    await page.getByRole('button', { name: 'Claude Companion' }).first().click();
+    await page.getByRole('button', { name: 'Início e mensagens privadas' }).click();
     await page.waitForTimeout(800);
+    await page.getByRole('button', { name: 'NEXUS Companion' }).first().click();
+    await page.waitForTimeout(1200);
+    await page.screenshot({ path: join(out, 'desktop-companion.png') });
     await page.getByRole('tab', { name: /Modo e voz/ }).or(page.getByRole('button', { name: /Modo e voz/ })).first().click();
     await page.waitForTimeout(600);
     await page.screenshot({ path: join(out, 'desktop-companion-modo.png'), fullPage: true });
+    await page.getByRole('button', { name: 'ALPHA - Templo da Magia' }).first().click();
+    await page.waitForTimeout(1200);
     // Estilo Discord: menu do servidor, convite com PIN, configurações, criar servidor, entrar com link + PIN
     await page.getByRole('button', { name: /Canais de texto/ }).first().waitFor({ timeout: 3000 }).catch(() => {});
     await page.locator('[aria-haspopup="menu"]').first().click();
@@ -314,12 +321,14 @@ for (const s of shots) {
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  await mockSupabase(page, { admin: false });
+  await mockSupabase(page, { admin: false, services: false });
   await page.goto('http://localhost:4319/index.html');
   await page.waitForTimeout(2500);
   await page.screenshot({ path: join(out, 'desktop-membro.png') });
-  const claudeItems = await page.getByText(/Claude AI|Claude Companion|Perguntar ao Claude|Chamar o Claude/).count();
-  console.log(`desktop-membro: ${errors.length ? 'ERROS: ' + errors.join(' | ') : 'ok'} · Claude ${claudeItems ? 'VISÍVEL (erro)' : 'escondido'}`);
+  // (uma resposta antiga da IA no canal continua visível; o que some são os acessos à IA)
+  const claudeItems = await page.getByRole('button', { name: /^NEXUS IA$|^NEXUS Companion$|Perguntar à NEXUS IA|Chamar a NEXUS IA/ }).count();
+  const services = await page.getByText(/Faturamento Roblox|^Serviços$/).count();
+  console.log(`desktop-membro: ${errors.length ? 'ERROS: ' + errors.join(' | ') : 'ok'} · IA ${claudeItems ? 'VISÍVEL (erro)' : 'escondida'} · Serviços ${services ? 'VISÍVEIS (erro)' : 'escondidos (servidor que não é de jogos)'}`);
   await ctx.close();
 }
 

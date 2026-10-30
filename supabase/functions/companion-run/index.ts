@@ -151,7 +151,7 @@ async function runTool(admin: Admin, task: Task, name: string, input: Record<str
     if (!ok) {
       await log(admin, task, 'aviso', 'permission.denied', `Permissão negada: ${scope} (ferramenta ${name})`);
       return {
-        content: `Permissão negada: a pessoa ainda não concedeu "${scope}" ao Claude Companion. Se precisar disso, use perguntar_usuario para pedir que ela conceda em Claude Companion → Permissões, ou continue sem.`,
+        content: `Permissão negada: a pessoa ainda não concedeu "${scope}" ao NEXUS Companion. Se precisar disso, use perguntar_usuario para pedir que ela conceda em NEXUS Companion → Permissões, ou continue sem.`,
         is_error: true,
       };
     }
@@ -271,7 +271,7 @@ async function runTool(admin: Admin, task: Task, name: string, input: Record<str
       const { data: people } = ids.length ? await admin.from('profiles').select('id, display_name').in('id', ids) : { data: [] };
       const lines = (msgs ?? [])
         .reverse()
-        .map((m) => `[${m.created_at}] ${m.author_kind === 'claude' ? 'Claude' : people?.find((p) => p.id === m.author_id)?.display_name ?? '?'}: ${m.content}`);
+        .map((m) => `[${m.created_at}] ${m.author_kind === 'claude' ? 'NEXUS IA' : people?.find((p) => p.id === m.author_id)?.display_name ?? '?'}: ${m.content}`);
       await log(admin, task, 'info', 'tool.read_messages', `Leu mensagens de #${target.name}`);
       return { content: clip(lines.join('\n')) };
     }
@@ -306,7 +306,7 @@ async function finish(admin: Admin, task: Task, ok: boolean, text: string) {
   await admin.rpc('_notify', {
     p_user: task.owner_id,
     p_kind: 'task',
-    p_title: ok ? `Claude concluiu: ${task.title}` : `Tarefa do Claude falhou: ${task.title}`,
+    p_title: ok ? `NEXUS IA concluiu: ${task.title}` : `Tarefa da NEXUS IA falhou: ${task.title}`,
     p_body: text.slice(0, 300),
     p_link: { task_id: task.id },
   });
@@ -336,7 +336,7 @@ async function execute(taskId: string, runId: string) {
   const { data: companion } = await admin.from('companion_settings').select('mode').eq('user_id', task.owner_id).maybeSingle();
 
   const system = [
-    `Você é o Claude Companion, trabalhando em SEGUNDO PLANO para ${owner?.display_name ?? 'a pessoa'} (@${owner?.username ?? ''}) no NEXUS.`,
+    `Você é a NEXUS IA (feita com o Claude, da Anthropic) no modo Companion, trabalhando em SEGUNDO PLANO para ${owner?.display_name ?? 'a pessoa'} (@${owner?.username ?? ''}) no NEXUS.`,
     `Data e hora: ${nowBrasilia()}.`,
     `Tarefa: ${task.title}`,
     project ? `Projeto: ${project.name}${project.description ? ` — ${project.description}` : ''}` : 'Sem projeto vinculado.',
@@ -354,7 +354,7 @@ async function execute(taskId: string, runId: string) {
     if (!task || task.status !== 'executando' || task.state?.run_id !== runId) return; // pausada, cancelada ou outro executor
     const quota = (await rpc<Array<{ allowed: boolean; reason: string | null }>>(admin, '_claude_quota', { p_user: task.owner_id }))[0];
     if (!quota?.allowed) {
-      await save(admin, task, { status: 'bloqueada', blocked_reason: quota?.reason ?? 'Sem cota do Claude' });
+      await save(admin, task, { status: 'bloqueada', blocked_reason: quota?.reason ?? 'Sem cota da NEXUS IA' });
       await log(admin, task, 'aviso', 'task.blocked', `Pausada: ${quota?.reason ?? 'sem cota'}`);
       return;
     }
@@ -392,7 +392,7 @@ async function execute(taskId: string, runId: string) {
     try {
       res = await createMessage({ model, max_tokens: 8000, system, tools: TOOLS, messages });
     } catch (err) {
-      const msg = err instanceof HttpError ? err.message : 'Falha ao falar com o Claude.';
+      const msg = err instanceof HttpError ? err.message : 'Falha ao falar com a NEXUS IA.';
       await finish(admin, task, false, msg);
       return;
     }

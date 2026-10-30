@@ -191,7 +191,7 @@ function MobileTabBar() {
       <div className="h-[58px] flex">
         {item(false, 'Servidores', <Home className="size-5" />, () => setMobileNav(true))}
         {item(view.kind === 'dm' || view.kind === 'home', 'Início', <MessageCircle className="size-5" />, () => selectHome())}
-        {claudeVisible ? item(view.kind === 'claude' || view.kind === 'companion', 'Claude', <Sparkles className="size-5" />, () => openView({ kind: 'claude' })) : null}
+        {claudeVisible ? item(view.kind === 'claude' || view.kind === 'companion', 'NEXUS IA', <Sparkles className="size-5" />, () => openView({ kind: 'claude' })) : null}
         {item(false, 'Avisos', <Bell className="size-5" />, () => setNotif(true), unread)}
         {item(false, 'Você', me ? <UserRound className="size-5" /> : <UserRound className="size-5" />, () => setModal({ kind: 'settings' }))}
       </div>

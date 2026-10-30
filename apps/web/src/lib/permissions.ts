@@ -28,7 +28,7 @@ export interface PermissionInfo {
   key: Permission;
   label: string;
   description: string;
-  group: 'Geral' | 'Mensagens' | 'Voz' | 'Claude' | 'Projetos e arquivos' | 'Finanças e Roblox';
+  group: 'Geral' | 'Mensagens' | 'Voz' | 'NEXUS IA' | 'Projetos e arquivos' | 'Finanças e Roblox';
   sensitive?: boolean;
 }
 
@@ -49,7 +49,7 @@ export const PERMISSIONS: PermissionInfo[] = [
   { key: 'video', label: 'Vídeo', description: 'Ligar a câmera nas calls.', group: 'Voz' },
   { key: 'share_screen', label: 'Compartilhar tela', description: 'Transmitir a tela ou uma janela.', group: 'Voz' },
   { key: 'move_members', label: 'Mover membros', description: 'Tirar pessoas de calls.', group: 'Voz' },
-  { key: 'use_claude', label: 'Usar o Claude', description: 'Chamar @Claude e usar o chat do Claude. O custo da API é do dono do NEXUS.', group: 'Claude', sensitive: true },
+  { key: 'use_claude', label: 'Usar a NEXUS IA', description: 'Chamar @NEXUS e usar o chat da NEXUS IA. O custo da API é do dono do NEXUS.', group: 'NEXUS IA', sensitive: true },
   { key: 'view_projects', label: 'Ver projetos', description: 'Ver projetos, tarefas e bugs.', group: 'Projetos e arquivos' },
   { key: 'manage_projects', label: 'Gerenciar projetos', description: 'Criar e editar projetos, tarefas e versões.', group: 'Projetos e arquivos' },
   { key: 'view_files', label: 'Ver e enviar arquivos', description: 'Acessar a área de arquivos do servidor.', group: 'Projetos e arquivos' },

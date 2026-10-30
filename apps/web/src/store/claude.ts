@@ -57,7 +57,7 @@ export async function prepareUpload(file: File): Promise<ClaudeUpload> {
     if (text.length > MAX_TEXT) throw new Error(`"${file.name}" tem texto demais (máx. ${MAX_TEXT.toLocaleString('pt-BR')} caracteres).`);
     return { name: file.name, type: file.type || 'text/plain', size: file.size, kind: 'text', data: text };
   }
-  throw new Error(`O Claude ainda não lê arquivos do tipo de "${file.name}". Envie imagens, PDF ou arquivos de texto/código.`);
+  throw new Error(`A NEXUS IA ainda não lê arquivos do tipo de "${file.name}". Envie imagens, PDF ou arquivos de texto/código.`);
 }
 
 export const useClaude = create<ClaudeState>((set, get) => ({
@@ -151,7 +151,7 @@ export const useClaude = create<ClaudeState>((set, get) => ({
           if (ev.type === 'delta' && typeof ev.text === 'string') {
             update((s) => ({ ...s, text: s.text + (ev.text as string) }));
           } else if (ev.type === 'error') {
-            update((s) => ({ ...s, error: String(ev.message || 'Erro no Claude') }));
+            update((s) => ({ ...s, error: String(ev.message || 'Erro na NEXUS IA') }));
           } else if (ev.type === 'title' && typeof ev.title === 'string') {
             set({
               conversations: get().conversations.map((c) => (c.id === conversationId ? { ...c, title: ev.title as string } : c)),
@@ -161,10 +161,10 @@ export const useClaude = create<ClaudeState>((set, get) => ({
         controller.signal,
       );
       const err = get().streaming[conversationId]?.error;
-      if (err) toast.warn('O Claude não conseguiu responder', err);
+      if (err) toast.warn('A NEXUS IA não conseguiu responder', err);
     } catch (err) {
       if ((err as Error).name !== 'AbortError') {
-        toast.error(err, 'O Claude não respondeu');
+        toast.error(err, 'A NEXUS IA não respondeu');
         update((s) => ({ ...s, error: friendlyError(err) }));
       }
     } finally {

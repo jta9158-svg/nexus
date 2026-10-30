@@ -180,7 +180,7 @@ function describe(p: Participant, isLocal: boolean): CallParticipant {
   const attrs = p.attributes ?? {};
   return {
     identity: p.identity,
-    name: p.isAgent ? 'Claude' : p.name || p.identity,
+    name: p.isAgent ? 'NEXUS IA' : p.name || p.identity,
     isLocal,
     isAgent: p.isAgent,
     speaking: p.isSpeaking,
@@ -284,12 +284,12 @@ export const useCall = create<CallState>((set, get) => {
         room
           .on(RoomEvent.ParticipantConnected, (p) => {
             playPing('join');
-            if (p.isAgent) toast.info('Claude entrou na call', 'Fale "Claude" e faça a pergunta. Ele não grava a conversa.');
+            if (p.isAgent) toast.info('NEXUS IA entrou na call', 'Fale "NEXUS IA" e faça a pergunta. Ela não grava a conversa.');
             sync();
           })
           .on(RoomEvent.ParticipantDisconnected, (p) => {
             playPing('leave');
-            if (p.isAgent) toast.info('Claude saiu da call');
+            if (p.isAgent) toast.info('NEXUS IA saiu da call');
             sync();
           })
           .on(RoomEvent.TrackSubscribed, (track, pub, participant) => {
@@ -465,10 +465,10 @@ export const useCall = create<CallState>((set, get) => {
       set({ claudeBusy: true });
       try {
         const r = await callFunction<{ status: string }>('claude-voice', { action: 'invite', channel_id: channelId });
-        if (r.status === 'ja_na_call') toast.info('O Claude já está nesta call');
-        else toast.success('Chamando o Claude…', 'Ele entra em alguns segundos.');
+        if (r.status === 'ja_na_call') toast.info('A NEXUS IA já está nesta call');
+        else toast.success('Chamando a NEXUS IA…', 'Ela entra em alguns segundos.');
       } catch (err) {
-        toast.error(err, 'Não foi possível chamar o Claude');
+        toast.error(err, 'Não foi possível chamar a NEXUS IA');
       } finally {
         set({ claudeBusy: false });
       }
@@ -481,7 +481,7 @@ export const useCall = create<CallState>((set, get) => {
       try {
         await callFunction('claude-voice', { action: 'remove', channel_id: channelId });
       } catch (err) {
-        toast.error(err, 'Não foi possível tirar o Claude da call');
+        toast.error(err, 'Não foi possível tirar a NEXUS IA da call');
       } finally {
         set({ claudeBusy: false });
       }
@@ -494,7 +494,7 @@ export const useCall = create<CallState>((set, get) => {
       const payload = new TextEncoder().encode(JSON.stringify({ action }));
       await room.localParticipant
         .publishData(payload, { reliable: true, topic: 'nexus-claude', destinationIdentities: [agent.identity] })
-        .catch((err) => toast.error(err, 'Não foi possível falar com o Claude'));
+        .catch((err) => toast.error(err, 'Não foi possível falar com a NEXUS IA'));
     },
   };
 });

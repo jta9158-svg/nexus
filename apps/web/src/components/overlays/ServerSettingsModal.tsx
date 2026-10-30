@@ -24,6 +24,7 @@ function GeneralTab({ server }: { server: Server }) {
   const [description, setDescription] = useState(server.description ?? '');
   const [systemChannel, setSystemChannel] = useState(server.system_channel_id ?? '');
   const [welcome, setWelcome] = useState(server.welcome_messages ?? true);
+  const [services, setServices] = useState(server.services_enabled ?? false);
   const [newOwner, setNewOwner] = useState('');
   const [busy, setBusy] = useState(false);
   const textChannels = channels.filter((c) => c.kind === 'text');
@@ -111,6 +112,12 @@ function GeneralTab({ server }: { server: Server }) {
         </Field>
         <Toggle checked={welcome} onChange={setWelcome} label="Avisar quando alguém entrar" description="Mostra “Fulano entrou no servidor” no canal escolhido." />
       </div>
+      <Toggle
+        checked={services}
+        onChange={setServices}
+        label="Serviços de jogos"
+        description="Mostra Faturamento Roblox, Projetos, Finanças e Arquivos na barra lateral. Já vem ligado nos servidores de jogos."
+      />
       <Notice tone="info">Só entra no servidor quem recebe um link de convite. O PIN de entrada fica em “Convites”.</Notice>
       <div className="flex justify-end">
         <Button
@@ -121,6 +128,7 @@ function GeneralTab({ server }: { server: Server }) {
               description: description.trim() || null,
               system_channel_id: systemChannel || null,
               welcome_messages: welcome,
+              services_enabled: services,
             })
           }
           disabled={name.trim().length < 2}
@@ -628,24 +636,24 @@ function ClaudeTab({ serverId }: { serverId: string }) {
   if (onlyAdmin) {
     return (
       <div className="space-y-4">
-        <Notice tone="info" title="O Claude é só seu">
-          Ninguém mais vê o Claude no NEXUS: para as outras pessoas somem o Claude AI, o Companion, o @Claude e o botão de chamar o Claude na call — e o
-          servidor também bloqueia. Se você chamar o @Claude num canal ou numa call, quem estiver ali vê ou ouve a resposta.
+        <Notice tone="info" title="A NEXUS IA é só sua">
+          Ninguém mais vê a NEXUS IA no NEXUS: para as outras pessoas somem a NEXUS IA, o Companion, o @NEXUS e o botão de chamar a IA na call — e o
+          servidor também bloqueia. Se você chamar a IA (@NEXUS) num canal ou numa call, quem estiver ali vê ou ouve a resposta.
         </Notice>
-        <p className="text-[13px] text-fg-3">Para liberar o Claude para outras pessoas, desligue “Claude só para mim” em Configurações → Administração.</p>
+        <p className="text-[13px] text-fg-3">Para liberar a NEXUS IA para outras pessoas, desligue “NEXUS IA só para mim” em Configurações → Administração.</p>
       </div>
     );
   }
   return (
     <div className="space-y-4">
-      <Notice tone="info" title="Quem paga o Claude">
-        O uso do Claude é cobrado na chave da API do administrador do NEXUS. Por isso ele só funciona para cargos com “Usar o Claude” em servidores criados pelo administrador (ou pessoas liberadas individualmente nas configurações de administração).
+      <Notice tone="info" title="Quem paga a NEXUS IA">
+        O uso da NEXUS IA é cobrado na chave da API do administrador do NEXUS. Por isso ela só funciona para cargos com “Usar a NEXUS IA” em servidores criados pelo administrador (ou pessoas liberadas individualmente nas configurações de administração).
       </Notice>
-      {ownerIsAdmin === false ? <Notice tone="warn">O dono deste servidor não é administrador do NEXUS, então o @Claude não responde aqui (exceto para pessoas liberadas individualmente).</Notice> : null}
+      {ownerIsAdmin === false ? <Notice tone="warn">O dono deste servidor não é administrador do NEXUS, então a NEXUS IA (@NEXUS) não responde aqui (exceto para pessoas liberadas individualmente).</Notice> : null}
       <div>
-        <div className="text-[12px] font-semibold uppercase tracking-wide text-fg-3 mb-2">Cargos que podem usar o Claude</div>
+        <div className="text-[12px] font-semibold uppercase tracking-wide text-fg-3 mb-2">Cargos que podem usar a NEXUS IA</div>
         {withClaude.length === 0 ? (
-          <p className="text-sm text-fg-3">Nenhum. Edite um cargo em “Cargos” e ative “Usar o Claude”.</p>
+          <p className="text-sm text-fg-3">Nenhum. Edite um cargo em “Cargos” e ative “Usar a NEXUS IA”.</p>
         ) : (
           <div className="flex flex-wrap gap-2">
             {withClaude.map((r) => (
@@ -681,7 +689,7 @@ export function ServerSettingsModal() {
   items.push({ value: 'membros', label: 'Membros' });
   if (hasPerm(perms, 'create_invites')) items.push({ value: 'convites', label: 'Convites' });
   if (hasPerm(perms, 'ban_members')) items.push({ value: 'banimentos', label: 'Banimentos' });
-  if (claudeVisible) items.push({ value: 'claude', label: 'Claude' });
+  if (claudeVisible) items.push({ value: 'claude', label: 'NEXUS IA' });
 
   return (
     <Modal open onClose={() => setModal(null)} title={`Configurações — ${server.name}`} size="xl">

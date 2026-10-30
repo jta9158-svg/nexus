@@ -52,7 +52,7 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
 INTERNAL_SECRET = os.environ.get("NEXUS_INTERNAL_SECRET", "")
 FUNCTION_URL = f"{SUPABASE_URL}/functions/v1/claude-voice"
 TOPIC = "nexus-claude"
-KEYTERMS = ["Claude", "NEXUS", "ALPHA", "Templo da Magia", "Roblox", "Roblox Studio"]
+KEYTERMS = ["NEXUS IA", "Claude", "NEXUS", "ALPHA", "Templo da Magia", "Roblox", "Roblox Studio"]
 
 
 class Brain:
@@ -166,7 +166,7 @@ class NexusLLMStream(llm.LLMStream):
 
 class NexusClaude(Agent):
     def __init__(self, brain: Brain) -> None:
-        super().__init__(instructions="Claude do NEXUS na call (as instruções completas ficam no servidor).")
+        super().__init__(instructions="NEXUS IA (feita com o Claude) na call; as instruções completas ficam no servidor.")
         self.brain = brain
 
     def _speaker(self) -> tuple[str | None, str]:

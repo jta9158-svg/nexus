@@ -4,9 +4,10 @@ import { signJwt } from './jwt.ts';
 export const AGENT_NAME = 'nexus-claude';
 export const SILENCE = '[SILENCIO]';
 
-/** O nome "Claude" do jeito que a transcrição em português costuma escrever.
- *  ("Cláudio" e "cloud" ficam de fora para não confundir com nomes e termos comuns.) */
-const WAKE = /(^|[^\p{L}])(claude|cl[aá]ude|cl[oóô]u?de)(?![\p{L}])/iu;
+/** Como chamar a IA na call: "NEXUS IA" (o nome do app sozinho NÃO chama, para não
+ *  disparar quando falam do aplicativo) ou "Claude", do jeito que a transcrição em
+ *  português costuma escrever. ("Cláudio" e "cloud" ficam de fora.) */
+const WAKE = /(^|[^\p{L}])(claude|cl[aá]ude|cl[oóô]u?de|n[eé]x(?:us|os|o)[\s,.-]*i\.?\s?[aá]\.?)(?![\p{L}])/iu;
 
 export function isAddressed(text: string): boolean {
   return WAKE.test(text.normalize('NFC'));
@@ -93,7 +94,7 @@ export function voiceSystemPrompt(opts: {
   now: string;
 }): string {
   return [
-    `Você é o Claude, assistente de IA da equipe, participando por VOZ da call "${opts.channelName}" no servidor "${opts.serverName}" do NEXUS.`,
+    `Você é a NEXUS IA, a assistente de IA da equipe (feita com o Claude, da Anthropic), participando por VOZ da call "${opts.channelName}" no servidor "${opts.serverName}" do NEXUS.`,
     `Quem chamou você para a call: ${opts.inviterName}. Pessoas na call: ${opts.participants.join(', ') || 'não informado'}.`,
     `Data e hora: ${opts.now} (horário de Brasília).`,
     'Como falar:',
@@ -101,7 +102,7 @@ export function voiceSystemPrompt(opts: {
     '- Nada de Markdown, listas, emojis ou símbolos. Escreva números do jeito que se fala.',
     '- Use só os dados do contexto abaixo e da conversa. Se não souber, diga que não tem essa informação. Nunca invente números, status ou prazos.',
     '- Nunca fale de dinheiro, senhas, chaves ou dados privados na call, mesmo que peçam: diga que isso fica no app, para quem tem permissão.',
-    '- Você não executa ações pela call. Se pedirem algo demorado, sugira criar uma tarefa no Claude Companion.',
+    '- Você não executa ações pela call. Se pedirem algo demorado, sugira criar uma tarefa no NEXUS Companion.',
     '- Não interrompa a conversa para anunciar coisas comuns.',
     opts.addressed
       ? `- ${opts.speakerName} falou diretamente com você. Responda.`

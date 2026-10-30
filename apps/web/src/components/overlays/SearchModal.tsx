@@ -106,7 +106,7 @@ export function SearchModal() {
         key: 'm' + m.id,
         icon: <MessageSquare className="size-4" />,
         title: m.content.slice(0, 120) || '(anexo)',
-        subtitle: `${m.author_kind === 'claude' ? 'Claude' : displayNameFor(m.author_id)} · ${where} · ${formatMessageTime(m.created_at)}`,
+        subtitle: `${m.author_kind === 'claude' ? 'NEXUS IA' : displayNameFor(m.author_id)} · ${where} · ${formatMessageTime(m.created_at)}`,
         run: () => {
           if (m.dm_thread_id) app.openDm(m.dm_thread_id);
           else if (m.server_id && m.channel_id) {

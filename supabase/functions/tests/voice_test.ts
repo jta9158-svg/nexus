@@ -3,8 +3,13 @@ import { buildMessages, cleanSpoken, isAddressed, isSilence, livekitHttpUrl, sho
 import { jwtVerify } from 'npm:jose@6';
 import { livekitAdminToken } from '../_shared/voice.ts';
 
-Deno.test('reconhece quando chamam o Claude pelo nome', () => {
+Deno.test('reconhece quando chamam a IA pelo nome (NEXUS IA ou Claude)', () => {
   assert(isAddressed('Claude, qual é o status do ALPHA?'));
+  assert(isAddressed('Nexus IA, qual é o status do ALPHA?'));
+  assert(isAddressed('nexus i.a. me ajuda aqui'));
+  assert(isAddressed('Néxus, IA, tá aí?'));
+  assert(!isAddressed('abre o NEXUS no celular'), 'falar do app não chama a IA');
+  assert(!isAddressed('vou mandar no nexus'));
   assert(isAddressed('ô Cláude, me ajuda'));
   assert(isAddressed('e aí clóde'));
   assertFalse(isAddressed('o Cláudio vai fazer o mapa'));

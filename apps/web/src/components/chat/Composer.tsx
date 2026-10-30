@@ -27,7 +27,7 @@ export async function askClaudeInChannel(msg: Message): Promise<void> {
   try {
     await callFunction('claude-channel', { message_id: msg.id });
   } catch (err) {
-    toast.warn('O Claude não pôde responder', (err as Error).message);
+    toast.warn('A NEXUS IA não pôde responder', (err as Error).message);
   }
 }
 
@@ -81,7 +81,7 @@ export function Composer({
     const q = mention.query.toLowerCase();
     const ids = kind === 'dm' ? dm?.participants ?? [] : (members ?? []).map((m) => m.user_id);
     const list: Candidate[] = [];
-    if (canClaude && 'claude'.startsWith(q)) list.push({ id: 'claude', username: 'Claude', label: 'Claude (assistente)', special: 'claude' });
+    if (canClaude && ('nexus'.startsWith(q) || 'claude'.startsWith(q) || 'ia'.startsWith(q))) list.push({ id: 'claude', username: 'NEXUS', label: 'NEXUS IA (assistente)', special: 'claude' });
     if (kind === 'channel' && hasPerm(perms, 'mention_everyone') && 'todos'.startsWith(q))
       list.push({ id: 'todos', username: 'todos', label: 'Todos do servidor', special: 'todos' });
     for (const id of ids) {
@@ -346,7 +346,7 @@ export function ClaudeAskBox({ target, serverId }: { target: string; serverId: s
     if (!q) return;
     setBusy(true);
     setText('');
-    const msg = await send(target, 'channel', `@Claude ${q}`, []);
+    const msg = await send(target, 'channel', `@NEXUS ${q}`, []);
     setBusy(false);
     if (msg) void askClaudeInChannel(msg);
   };
@@ -354,7 +354,7 @@ export function ClaudeAskBox({ target, serverId }: { target: string; serverId: s
   return (
     <div className="px-3 sm:px-5 pb-2.5 shrink-0">
       <div className="rounded-2xl border border-line bg-[#151a24] p-2.5 sm:p-3">
-        <span className="inline-flex items-center rounded-md bg-accent/18 text-mention text-[13px] font-medium px-1.5 py-0.5 mb-1.5">@Claude</span>
+        <span className="inline-flex items-center rounded-md bg-accent/18 text-mention text-[13px] font-medium px-1.5 py-0.5 mb-1.5">@NEXUS</span>
         <div className="flex items-center gap-2">
           <input
             value={text}
@@ -367,13 +367,13 @@ export function ClaudeAskBox({ target, serverId }: { target: string; serverId: s
             }}
             placeholder="Analise o sistema de combate e me diga o que precisa ser melhorado…"
             className="flex-1 min-w-0 bg-transparent outline-none text-[14px] text-fg placeholder:text-fg-3 h-9 px-1"
-            aria-label="Perguntar ao Claude neste canal"
+            aria-label="Perguntar à NEXUS IA neste canal"
           />
           <button
             onClick={() => void submit()}
             disabled={!text.trim() || busy}
             className="size-9 rounded-lg flex items-center justify-center text-fg hover:bg-raised disabled:text-fg-3"
-            aria-label="Perguntar ao Claude"
+            aria-label="Perguntar à NEXUS IA"
           >
             <SendHorizontal className="size-5" />
           </button>

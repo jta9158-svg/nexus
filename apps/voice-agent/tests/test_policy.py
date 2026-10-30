@@ -10,6 +10,9 @@ from policy import can_command, is_addressed, pick_speaker, should_consider, tts
 class PolicyTest(unittest.TestCase):
     def test_wake_word(self):
         self.assertTrue(is_addressed("Claude, qual é o status do ALPHA?"))
+        self.assertTrue(is_addressed("Nexus IA, qual é o status do ALPHA?"))
+        self.assertTrue(is_addressed("néxus i.a. me ajuda"))
+        self.assertFalse(is_addressed("abre o NEXUS no celular"))
         self.assertTrue(is_addressed("ô Cláude me ajuda"))
         self.assertTrue(is_addressed("e aí clóde"))
         self.assertFalse(is_addressed("o Cláudio vai fazer o mapa"))

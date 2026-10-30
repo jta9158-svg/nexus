@@ -372,6 +372,25 @@ async function main() {
   const catsS = (await asUser(A, `select name from public.channel_categories where server_id = $1 order by position`, [S])).rows.map((x) => x.name);
   ok(catsS.join('|') === 'Informações|Canais de texto|Canais de voz', 'modelo "Estúdio de jogos" com categoria de informações', catsS);
 
+  // "Serviços" (Faturamento Roblox, Projetos, Finanças, Arquivos) só nos servidores de jogos
+  ok(one(await service(`select services_enabled from public.servers where id = $1`, [S])).services_enabled === true &&
+     one(await service(`select services_enabled from public.servers where id = $1`, [S2])).services_enabled === false, 'Serviços ligados no "Estúdio de jogos" e desligados no "Amigos"');
+  const S3 = one(await asUser(D, `select public.create_server('Clã do Roblox', 'jogos') as id`)).id;
+  ok(one(await service(`select services_enabled from public.servers where id = $1`, [S3])).services_enabled === true, 'modelo "Jogos" também mostra os Serviços');
+  await asUser(F, `update public.servers set services_enabled = true where id = $1`, [S2]);
+  ok(one(await service(`select services_enabled from public.servers where id = $1`, [S2])).services_enabled === false, 'quem não é membro/gerente não liga os Serviços');
+  await asUser(C, `update public.servers set services_enabled = true where id = $1`, [S2]);
+  ok(one(await service(`select services_enabled from public.servers where id = $1`, [S2])).services_enabled === true, 'o dono liga os Serviços quando quiser');
+  await asUser(C, `update public.servers set services_enabled = false where id = $1`, [S2]);
+  await asUser(D, `delete from public.servers where id = $1`, [S3]);
+
+  // A IA aparece como "NEXUS IA": @NEXUS chama (o @Claude continua valendo)
+  ok(one(await asUser(A, `insert into public.messages (channel_id, author_id, content) values ($1, $2, '@NEXUS como está o ALPHA?') returning mentions_claude`, [geral, A])).mentions_claude === true, '@NEXUS chama a IA no canal');
+  ok(one(await asUser(A, `insert into public.messages (channel_id, author_id, content) values ($1, $2, 'fala @nexusfan') returning mentions_claude`, [geral, A])).mentions_claude === false, '@nexusfan não chama a IA');
+  await service(`insert into public.messages (channel_id, author_kind, content) values ($1, 'claude', 'Pronto, @matheus: revisei o mapa.')`, [geral]);
+  const iaNotif = one(await asUser(B, `select title from public.notifications where user_id = $1 and kind = 'mention' order by created_at desc limit 1`, [B]));
+  ok(iaNotif && iaNotif.title.startsWith('NEXUS IA mencionou você'), 'aviso de menção da IA usa o nome NEXUS IA', iaNotif);
+
   await asUser(C, `update public.servers set is_public = true where id = $1`, [S2]);
   ok(one(await service(`select is_public from public.servers where id = $1`, [S2])).is_public === false, 'não existe servidor público: só entra com link');
   ok((await asUser(F, `select 1 from public.servers where id = $1`, [S2])).rows.length === 0, 'quem não é membro não vê o servidor');

@@ -218,7 +218,6 @@ export function ServerSidebar({ serverId }: { serverId: string }) {
   const openView = useApp((s) => s.openView);
   const setModal = useApp((s) => s.setModal);
   const me = useSession((s) => s.userId);
-  const claudeVisible = useClaudeVisible();
   const call = useCall();
   const [menu, setMenu] = useState(false);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(readCollapsed);
@@ -548,36 +547,24 @@ export function ServerSidebar({ serverId }: { serverId: string }) {
           <p className="px-2.5 pt-4 text-[13px] text-fg-3">Nenhum canal ainda.{canManageChannels ? ' Use “Criar canal” no menu do servidor.' : ''}</p>
         ) : null}
 
-        <SectionHeader>
-          <ChevronDown className="size-3.5" /> Serviços
-        </SectionHeader>
-        {claudeVisible ? (
+        {server.services_enabled && (hasPerm(perms, 'view_roblox') || hasPerm(perms, 'view_projects') || hasPerm(perms, 'view_finance') || hasPerm(perms, 'view_files')) ? (
           <>
-            <NavItem
-              icon={<ClaudeAvatar size={20} />}
-              label="Claude AI"
-              active={view.kind === 'claude'}
-              onClick={() => openView({ kind: 'claude' })}
-            />
-            <NavItem
-              icon={<Sparkles className="size-[18px]" />}
-              label="Claude Companion"
-              active={view.kind === 'companion'}
-              onClick={() => openView({ kind: 'companion' })}
-            />
+            <SectionHeader>
+              <ChevronDown className="size-3.5" /> Serviços
+            </SectionHeader>
+            {hasPerm(perms, 'view_roblox') ? (
+              <NavItem icon={<BarChart3 className="size-[18px]" />} label="Faturamento Roblox" active={isActive('roblox')} onClick={() => openView({ kind: 'roblox', serverId })} />
+            ) : null}
+            {hasPerm(perms, 'view_projects') ? (
+              <NavItem icon={<Gamepad2 className="size-[18px]" />} label="Projetos" active={isActive('projects')} onClick={() => openView({ kind: 'projects', serverId })} />
+            ) : null}
+            {hasPerm(perms, 'view_finance') ? (
+              <NavItem icon={<Wallet className="size-[18px]" />} label="Finanças" active={isActive('finance')} onClick={() => openView({ kind: 'finance', serverId })} />
+            ) : null}
+            {hasPerm(perms, 'view_files') ? (
+              <NavItem icon={<FolderOpen className="size-[18px]" />} label="Arquivos" active={isActive('files')} onClick={() => openView({ kind: 'files', serverId })} />
+            ) : null}
           </>
-        ) : null}
-        {hasPerm(perms, 'view_roblox') ? (
-          <NavItem icon={<BarChart3 className="size-[18px]" />} label="Faturamento Roblox" active={isActive('roblox')} onClick={() => openView({ kind: 'roblox', serverId })} />
-        ) : null}
-        {hasPerm(perms, 'view_projects') ? (
-          <NavItem icon={<Gamepad2 className="size-[18px]" />} label="Projetos" active={isActive('projects')} onClick={() => openView({ kind: 'projects', serverId })} />
-        ) : null}
-        {hasPerm(perms, 'view_finance') ? (
-          <NavItem icon={<Wallet className="size-[18px]" />} label="Finanças" active={isActive('finance')} onClick={() => openView({ kind: 'finance', serverId })} />
-        ) : null}
-        {hasPerm(perms, 'view_files') ? (
-          <NavItem icon={<FolderOpen className="size-[18px]" />} label="Arquivos" active={isActive('files')} onClick={() => openView({ kind: 'files', serverId })} />
         ) : null}
       </div>
       <UserPanel />
@@ -645,8 +632,8 @@ export function HomeSidebar() {
         <NavItem icon={<LayoutDashboard className="size-[18px]" />} label="Visão geral" active={view.kind === 'home'} onClick={() => openView({ kind: 'home' })} />
         {claudeVisible ? (
           <>
-            <NavItem icon={<ClaudeAvatar size={20} />} label="Claude AI" active={view.kind === 'claude'} onClick={() => openView({ kind: 'claude' })} />
-            <NavItem icon={<Sparkles className="size-[18px]" />} label="Claude Companion" active={view.kind === 'companion'} onClick={() => openView({ kind: 'companion' })} />
+            <NavItem icon={<ClaudeAvatar size={20} />} label="NEXUS IA" active={view.kind === 'claude'} onClick={() => openView({ kind: 'claude' })} />
+            <NavItem icon={<Sparkles className="size-[18px]" />} label="NEXUS Companion" active={view.kind === 'companion'} onClick={() => openView({ kind: 'companion' })} />
           </>
         ) : null}
 

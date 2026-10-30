@@ -70,7 +70,7 @@ async function invite(req: Request, channelId: string) {
   const reason = await rpc<string | null>(admin, '_voice_invite_check', { p_channel: channelId, p_user: user.id });
   if (reason) throw new HttpError(403, reason);
   const quota = (await rpc<Array<{ allowed: boolean; reason: string | null }>>(admin, '_claude_quota', { p_user: user.id }))[0];
-  if (!quota?.allowed) throw new HttpError(403, quota?.reason ?? 'Sem cota do Claude.');
+  if (!quota?.allowed) throw new HttpError(403, quota?.reason ?? 'Sem cota da NEXUS IA.');
   lkEnv();
   apiKey();
 
@@ -123,7 +123,7 @@ async function invite(req: Request, channelId: string) {
       .eq('id', session.id);
     throw err;
   }
-  await log(admin, user.id, 'info', 'voice.invited', `Chamou o Claude para a call #${channel!.name}`, { channel_id: channelId, session_id: session.id });
+  await log(admin, user.id, 'info', 'voice.invited', `Chamou a NEXUS IA para a call #${channel!.name}`, { channel_id: channelId, session_id: session.id });
   return json({ status: 'chamando', session_id: session.id });
 }
 
@@ -132,7 +132,7 @@ async function remove(req: Request, channelId: string) {
   const { user } = await requireUser(req);
   const admin = adminClient();
   const can = await rpc<boolean>(admin, '_voice_can_remove', { p_channel: channelId, p_user: user.id });
-  if (!can) throw new HttpError(403, 'Só quem chamou o Claude (ou quem pode mover membros) pode tirá-lo da call.');
+  if (!can) throw new HttpError(403, 'Só quem chamou a NEXUS IA (ou quem pode mover membros) pode tirá-la da call.');
   const session = await activeSession(admin, channelId);
   if (!session) return json({ status: 'fora_da_call' });
   const room = session.room as string;
@@ -151,7 +151,7 @@ async function remove(req: Request, channelId: string) {
     .from('voice_sessions')
     .update({ status: 'encerrada', ended_at: new Date().toISOString(), ended_reason: 'Removido da call' })
     .eq('id', session.id);
-  await log(admin, session.inviter_id, 'info', 'voice.removed', 'Claude saiu da call (removido)', { session_id: session.id, by: user.id });
+  await log(admin, session.inviter_id, 'info', 'voice.removed', 'NEXUS IA saiu da call (removida)', { session_id: session.id, by: user.id });
   return json({ status: 'removido' });
 }
 
@@ -225,7 +225,7 @@ async function voiceContext(admin: Admin, serverId: string, listeners: string[],
       .order('updated_at', { ascending: false })
       .limit(5);
     if (work?.length) {
-      lines.push('Tarefas do Claude Companion de quem chamou você (status ao vivo):');
+      lines.push('Tarefas do NEXUS Companion de quem chamou você (status ao vivo):');
       for (const w of work) lines.push(`- ${w.title}: ${TASK_STATE[w.status] ?? w.status}, ${w.progress}%${w.progress_note ? ` (${w.progress_note})` : ''}`);
     }
   }
@@ -272,7 +272,7 @@ function textStream(produce: (push: (s: string) => void) => Promise<void>): Resp
         const spoken = /cr[eé]dito/i.test(msg)
           ? ' Ainda não consigo pensar aqui: a conta da API do Claude está sem créditos. O administrador precisa ativar os créditos do plano Max.'
           : /sobrecarregado|limite de uso/i.test(msg)
-            ? ' O Claude está ocupado agora. Tenta de novo em alguns segundos.'
+            ? ' Estou ocupada agora. Tenta de novo em alguns segundos.'
             : ' Desculpa, tive um problema para responder agora.';
         controller.enqueue(encoder.encode(spoken));
       } finally {
@@ -382,14 +382,14 @@ async function event(req: Request, body: { session_id: string; event: string; de
   const detail = String(body.detail ?? '').slice(0, 300);
   if (body.event === 'joined') {
     await admin.from('voice_sessions').update({ status: 'na_call' }).eq('id', session.id).in('status', ['chamando', 'na_call']);
-    await log(admin, session.inviter_id, 'info', 'voice.joined', 'Claude entrou na call', { session_id: session.id });
+    await log(admin, session.inviter_id, 'info', 'voice.joined', 'NEXUS IA entrou na call', { session_id: session.id });
   } else if (body.event === 'left' || body.event === 'error') {
     await admin
       .from('voice_sessions')
       .update({ status: body.event === 'error' ? 'falhou' : 'encerrada', ended_at: new Date().toISOString(), ended_reason: detail || null })
       .eq('id', session.id)
       .in('status', ['chamando', 'na_call']);
-    await log(admin, session.inviter_id, body.event === 'error' ? 'erro' : 'info', body.event === 'error' ? 'voice.error' : 'voice.left', body.event === 'error' ? `Problema na voz: ${detail}` : 'Claude saiu da call', { session_id: session.id });
+    await log(admin, session.inviter_id, body.event === 'error' ? 'erro' : 'info', body.event === 'error' ? 'voice.error' : 'voice.left', body.event === 'error' ? `Problema na voz: ${detail}` : 'NEXUS IA saiu da call', { session_id: session.id });
   } else if (body.event === 'state') {
     // estados como "pausado" ficam só na própria sala (atributos do participante)
   }

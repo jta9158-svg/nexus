@@ -1,12 +1,12 @@
 # Testes do NEXUS
 
-Situação em **30/10/2026**, versão **0.1.2**. Tudo abaixo foi executado de verdade; o que ainda não pôde ser testado está marcado como **pendente**, com o motivo.
+Situação em **30/10/2026**, versão **0.1.3**. Tudo abaixo foi executado de verdade; o que ainda não pôde ser testado está marcado como **pendente**, com o motivo.
 
 ## 1. Testes automáticos
 
 | Conjunto | Como rodar | Resultado |
 |---|---|---|
-| Banco e regras de acesso (PostgreSQL 18 via PGlite, imitando o Supabase: Auth, Storage, Realtime) | `cd supabase/tests && npm install && npm test` | **188 passaram, 0 falharam** |
+| Banco e regras de acesso (PostgreSQL 18 via PGlite, imitando o Supabase: Auth, Storage, Realtime) | `cd supabase/tests && npm install && npm test` | **195 passaram, 0 falharam** |
 | Organização dos canais (categorias, arrastar e soltar, subir/descer) | `node --experimental-strip-types apps/web/tests/layout.test.mjs` | **9 passaram, 0 falharam** |
 | Funções do servidor (Deno): cliente da API do Claude contra um servidor falso no formato oficial (streaming, `tool_use`, erro de crédito, custo), token do LiveKit (HS256), modos do Companion, regras de voz (nome “Claude”, silêncio, histórico, token de servidor) | `deno test --allow-net --allow-env supabase/functions/tests/` | **14 passaram, 0 falharam** |
 | Agente de voz (Python): regras (chamado pelo nome, modos, vozes, troca de quem fala, comandos) e o agente em modo texto contra um servidor falso (responde quando chamado, não interrompe conversa, pausado/silenciado, histórico) | `cd apps/voice-agent && pip install -r requirements.txt && python -m unittest discover -s tests` | **11 passaram, 0 falharam** |
@@ -18,7 +18,7 @@ Situação em **30/10/2026**, versão **0.1.2**. Tudo abaixo foi executado de ve
 | Instalador do Windows | 7-Zip lista e testa o conteúdo do `NEXUS-Setup.exe` | todos os arquivos íntegros |
 | APK Android | `aapt2 dump badging` e `apksigner verify` | pacote `app.nexus.mobile`, versão 0.1.0, assinatura de depuração válida |
 
-### O que os 188 testes do banco cobrem
+### O que os 195 testes do banco cobrem
 
 | Área | Testes | Exemplos |
 |---|---|---|
@@ -36,7 +36,7 @@ Situação em **30/10/2026**, versão **0.1.2**. Tudo abaixo foi executado de ve
 | Tempo real | 4 | presença/“em call” do servidor só para membros; canal da DM só para participantes |
 | Moderação e posse | 5 | banido perde acesso e não volta pelo convite; só o dono transfere o servidor |
 | Claude só para o administrador | 8 | com a chave ligada (padrão), ninguém além do administrador usa o Claude — nem com cargo: @Claude, chat, tarefas e voz bloqueados no servidor; só o administrador muda a chave |
-| Estilo Discord | 48 | qualquer pessoa cria o próprio servidor com modelo (Amigos, Jogos, Estudo, Estúdio, do zero) já com categorias; não existe servidor público — só entra com link; prévia do convite antes do login; PIN só visível para quem gerencia; sem PIN / PIN errado não entra; 5 erros bloqueiam por 15 min; app antigo não fura o PIN; link vencido e de 1 uso; aviso “entrou no servidor” (pode desligar); categorias (criar, ver, mover canal, reordenar, apagar sem perder canais; nunca de outro servidor); apelido; banir/desbanir; calls para todos ou só do administrador; transferir dono |
+| Estilo Discord | 55 | Serviços só nos servidores de jogos (o dono liga/desliga); @NEXUS chama a IA (e @nexusfan não); aviso de menção da IA com o nome “NEXUS IA”; qualquer pessoa cria o próprio servidor com modelo (Amigos, Jogos, Estudo, Estúdio, do zero) já com categorias; não existe servidor público — só entra com link; prévia do convite antes do login; PIN só visível para quem gerencia; sem PIN / PIN errado não entra; 5 erros bloqueiam por 15 min; app antigo não fura o PIN; link vencido e de 1 uso; aviso “entrou no servidor” (pode desligar); categorias (criar, ver, mover canal, reordenar, apagar sem perder canais; nunca de outro servidor); apelido; banir/desbanir; calls para todos ou só do administrador; transferir dono |
 | Claude na call (voz) | 17 | com o serviço de voz desligado ninguém chama; precisa do cargo “Usar o Claude” e das permissões “Ouvir” e “Falar”; quem não é membro não chama nem vê a sessão; canal de texto não aceita voz; no máximo um Claude por call; só quem chamou ou a moderação tira; o app não cria nem altera sessões; opções de voz validadas |
 
 ## 2. Testes obrigatórios do Claude Companion (seção 5.11 da especificação)

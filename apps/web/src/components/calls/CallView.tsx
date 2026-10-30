@@ -75,7 +75,7 @@ function Tile({ p, serverId, compact }: { p: CallParticipant; serverId: string; 
   const volume = useCall((s) => s.volumes[p.identity] ?? 1);
   const setVolume = useCall((s) => s.setVolume);
   const [showVolume, setShowVolume] = useState(false);
-  const name = p.isAgent ? 'Claude' : displayNameFor(p.identity, serverId) === 'Carregando…' ? p.name : displayNameFor(p.identity, serverId);
+  const name = p.isAgent ? 'NEXUS IA' : displayNameFor(p.identity, serverId) === 'Carregando…' ? p.name : displayNameFor(p.identity, serverId);
   return (
     <div
       className={cx(
@@ -257,8 +257,8 @@ function ClaudeBar({ agent }: { agent: CallParticipant }) {
     <div className="mb-3 flex flex-wrap items-center gap-2 rounded-2xl border border-accent/40 bg-accent/10 px-3 py-2">
       <ClaudeAvatar size={28} />
       <div className="min-w-0 flex-1">
-        <div className="text-[14px] font-medium">Claude está na call — {agentLabel(agent)}</div>
-        <div className="text-[12px] text-fg-2">Diga “Claude” antes da pergunta. Ele não grava a conversa e não fala de finanças na call.</div>
+        <div className="text-[14px] font-medium">NEXUS IA está na call — {agentLabel(agent)}</div>
+        <div className="text-[12px] text-fg-2">Diga “NEXUS IA” antes da pergunta. Ela não grava a conversa e não fala de finanças na call.</div>
       </div>
       <Button
         size="sm"
@@ -310,7 +310,7 @@ export function CallView({ serverId, channelId }: { serverId: string; channelId:
           inThis
             ? call.status === 'reconnecting'
               ? 'Reconectando…'
-              : `${people.filter((p) => !p.isAgent).length} na chamada${agent ? ' + Claude' : ''}`
+              : `${people.filter((p) => !p.isAgent).length} na chamada${agent ? ' + NEXUS IA' : ''}`
             : waiting.length
               ? `${waiting.length} na chamada`
               : 'Ninguém na chamada'
@@ -405,12 +405,12 @@ export function CallView({ serverId, channelId }: { serverId: string; channelId:
               </div>
             ) : null}
             {agent ? (
-              <ControlButton label="Tirar o Claude da call" active onClick={() => void call.removeClaude()} disabled={call.claudeBusy}>
+              <ControlButton label="Tirar a NEXUS IA da call" active onClick={() => void call.removeClaude()} disabled={call.claudeBusy}>
                 <BotOff className="size-5" />
               </ControlButton>
             ) : !claudeVisible ? null : (
               <ControlButton
-                label={voiceReady ? 'Chamar o Claude para a call' : 'Claude na call: o administrador ainda não ativou o serviço de voz'}
+                label={voiceReady ? 'Chamar a NEXUS IA para a call' : 'NEXUS IA na call: o administrador ainda não ativou o serviço de voz'}
                 disabled={!voiceReady || call.claudeBusy}
                 onClick={() => void call.inviteClaude()}
               >

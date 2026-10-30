@@ -22,14 +22,14 @@ Deno.serve(async (req) => {
 
     const { data: msg } = await admin.from('messages').select('*').eq('id', message_id).maybeSingle();
     if (!msg || msg.author_id !== user.id || !msg.channel_id) throw new HttpError(404, 'Mensagem não encontrada.');
-    if (!msg.mentions_claude) throw new HttpError(400, 'A mensagem não menciona @Claude.');
+    if (!msg.mentions_claude) throw new HttpError(400, 'A mensagem não chama a NEXUS IA (@NEXUS).');
 
     const { data: channel } = await admin.from('channels').select('id, name, server_id, claude_enabled, topic').eq('id', msg.channel_id).single();
-    if (!channel?.claude_enabled) throw new HttpError(403, 'O @Claude está desativado neste canal.');
+    if (!channel?.claude_enabled) throw new HttpError(403, 'A NEXUS IA está desativada neste canal.');
     const allowed = await rpc<boolean>(admin, '_can_use_claude_in_server', { p_server: channel.server_id, p_user: user.id });
-    if (!allowed) throw new HttpError(403, 'Você não tem permissão para usar o Claude neste servidor (cargo com "Usar o Claude" em servidor do administrador).');
+    if (!allowed) throw new HttpError(403, 'Você não tem permissão para usar a NEXUS IA neste servidor.');
     const quota = (await rpc<Quota[]>(admin, '_claude_quota', { p_user: user.id }))[0];
-    if (!quota?.allowed) throw new HttpError(403, quota?.reason ?? 'Claude indisponível.');
+    if (!quota?.allowed) throw new HttpError(403, quota?.reason ?? 'NEXUS IA indisponível.');
     apiKey();
 
     // Evita resposta duplicada para a mesma mensagem.
@@ -83,7 +83,7 @@ async function answer(opts: {
     const ids = Array.from(new Set((recent ?? []).map((m) => m.author_id).filter(Boolean)));
     const { data: people } = ids.length ? await admin.from('profiles').select('id, display_name, username').in('id', ids) : { data: [] };
     const who = (m: { author_id: string | null; author_kind: string }) =>
-      m.author_kind === 'claude' ? 'Claude' : people?.find((p) => p.id === m.author_id)?.display_name ?? 'alguém';
+      m.author_kind === 'claude' ? 'NEXUS IA' : people?.find((p) => p.id === m.author_id)?.display_name ?? 'alguém';
 
     const transcript = (recent ?? [])
       .reverse()
@@ -107,7 +107,7 @@ async function answer(opts: {
     const system = baseSystemPrompt(
       profile ?? { display_name: 'Pessoa', username: 'usuario' },
       [
-        `\nVocê está no canal #${channel.name} do servidor "${server?.name ?? ''}" no NEXUS, respondendo a quem te chamou com @Claude.`,
+        `\nVocê está no canal #${channel.name} do servidor "${server?.name ?? ''}" no NEXUS, respondendo a quem te chamou com @NEXUS.`,
         'Várias pessoas leem o canal. Seja breve (até ~12 linhas, salvo se pedirem detalhes), use o nome das pessoas quando fizer sentido e não repita a pergunta.',
         'Você só vê as mensagens recentes deste canal e o contexto abaixo.',
         context ? `\n# Contexto dos projetos\n${context}` : '',
@@ -130,7 +130,7 @@ async function answer(opts: {
     });
     await admin.from('claude_channel_requests').update({ status: 'respondido', reply_message_id: replyId }).eq('message_id', messageId);
   } catch (err) {
-    const message = err instanceof HttpError ? err.message : 'O Claude não conseguiu responder agora.';
+    const message = err instanceof HttpError ? err.message : 'A NEXUS IA não conseguiu responder agora.';
     console.error('claude-channel falhou', err);
     await admin.from('messages').update({ meta: { status: 'error', requested_by: userId, error: message } }).eq('id', replyId);
     await admin.from('claude_channel_requests').update({ status: 'erro', error: message }).eq('message_id', messageId);

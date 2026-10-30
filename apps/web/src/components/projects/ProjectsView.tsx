@@ -264,7 +264,7 @@ function TaskCard({ t, onOpen, onMove, canEdit }: { t: ProjectTask; onOpen: () =
             {KIND_ICON[t.kind]} {t.kind === 'bug' ? 'Bug' : t.kind === 'melhoria' ? 'Melhoria' : 'Tarefa'}
           </Badge>
           <Badge tone={PRIORITY[t.priority].tone}>{PRIORITY[t.priority].label}</Badge>
-          {t.created_by_kind === 'claude' ? <Badge tone="violet">Claude</Badge> : null}
+          {t.created_by_kind === 'claude' ? <Badge tone="violet">NEXUS IA</Badge> : null}
         </div>
         <div className="text-[14px] text-fg leading-snug">{t.title}</div>
       </button>
@@ -554,7 +554,7 @@ export function ProjectsView({ serverId, projectId }: { serverId: string; projec
                         <li key={a.id} className="flex items-start gap-3 text-sm">
                           <History className="size-4 text-fg-3 mt-0.5 shrink-0" />
                           <span className="flex-1">
-                            <b className="text-fg">{a.actor_kind === 'claude' ? 'Claude' : a.actor_kind === 'system' ? 'Sistema' : displayNameFor(a.actor_id, serverId)}</b>{' '}
+                            <b className="text-fg">{a.actor_kind === 'claude' ? 'NEXUS IA' : a.actor_kind === 'system' ? 'Sistema' : displayNameFor(a.actor_id, serverId)}</b>{' '}
                             <span className="text-fg-2">{a.summary}</span>
                           </span>
                           <span className="text-[12px] text-fg-3 shrink-0">{formatRelative(a.created_at)}</span>

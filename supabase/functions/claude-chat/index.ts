@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     if (!conv || conv.owner_id !== user.id) throw new HttpError(404, 'Conversa não encontrada.');
 
     const quota = (await rpc<Quota[]>(admin, '_claude_quota', { p_user: user.id }))[0];
-    if (!quota?.allowed) throw new HttpError(403, quota?.reason ?? 'Claude indisponível para você.');
+    if (!quota?.allowed) throw new HttpError(403, quota?.reason ?? 'NEXUS IA indisponível para você.');
     apiKey(); // falha cedo se a chave não estiver configurada
 
     const [{ data: profile }, { data: settings }, { data: history }] = await Promise.all([
@@ -146,7 +146,7 @@ Deno.serve(async (req) => {
           send({ type: 'done', usage: { input: result.inputTokens, output: result.outputTokens } });
         } catch (err) {
           const aborted = upstream.signal.aborted;
-          const message = err instanceof HttpError ? err.message : aborted ? 'Interrompido' : 'Falha ao falar com o Claude.';
+          const message = err instanceof HttpError ? err.message : aborted ? 'Interrompido' : 'Falha ao falar com a NEXUS IA.';
           await admin
             .from('ai_messages')
             .update({ content: partial, status: aborted ? 'cancelled' : 'error', error: aborted ? null : message })

@@ -57,7 +57,7 @@ export function estimateCost(model: string, input: number, output: number): numb
 export function apiKey(): string {
   const key = env('ANTHROPIC_API_KEY');
   if (!key) {
-    throw new HttpError(503, 'O Claude ainda não foi configurado no servidor: falta o segredo ANTHROPIC_API_KEY (veja docs/CONFIGURACAO.md).');
+    throw new HttpError(503, 'A NEXUS IA ainda não foi configurada no servidor: falta o segredo ANTHROPIC_API_KEY (veja docs/CONFIGURACAO.md).');
   }
   return key;
 }
@@ -75,7 +75,7 @@ function friendly(status: number, body: string): string {
   if (status === 401 || type === 'authentication_error') return 'A chave da API da Anthropic é inválida ou foi revogada.';
   if (status === 403 || type === 'permission_error') return 'A chave da API da Anthropic não tem permissão para este modelo.';
   if (status === 429 || type === 'rate_limit_error') return 'Limite de uso da API da Anthropic atingido. Tente de novo em instantes.';
-  if (status === 529 || type === 'overloaded_error') return 'O Claude está sobrecarregado agora. Tente de novo em alguns segundos.';
+  if (status === 529 || type === 'overloaded_error') return 'A NEXUS IA está sobrecarregada agora. Tente de novo em alguns segundos.';
   if (/credit balance/i.test(message)) {
     return 'A conta da API do Claude está sem créditos. O administrador do NEXUS precisa vincular os créditos do plano Max (claude.ai → Configurações → Cobrança → créditos da API) ou adicionar créditos no Console da Anthropic.';
   }

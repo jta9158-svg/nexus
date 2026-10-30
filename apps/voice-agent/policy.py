@@ -9,11 +9,11 @@ import re
 
 # "Claude" do jeito que a transcrição em português costuma escrever.
 # "Cláudio" e "cloud" ficam de fora para não confundir com nomes e termos comuns.
-_WAKE = re.compile(r"(?<!\w)(claude|cl[aá]ude|cl[oóô]u?de)(?!\w)", re.IGNORECASE)
+_WAKE = re.compile(r"(?<!\w)(claude|cl[aá]ude|cl[oóô]u?de|n[eé]x(?:us|os|o)[\s,.-]*i\.?\s?[aá]\.?)(?!\w)", re.IGNORECASE)
 
 MODES = ("quando_chamado", "participante_ativo", "segundo_plano", "hibrido")
 
-GREETING = "Oi, pessoal! Sou o Claude. É só falar meu nome antes da pergunta. Não gravo a conversa."
+GREETING = "Oi, pessoal! Sou a NEXUS IA. Pra falar comigo, é só dizer NEXUS IA antes da pergunta. Não gravo a conversa."
 GOODBYE_PAUSED = "Pausei a escuta. Quando quiserem, é só me liberar de novo."
 
 

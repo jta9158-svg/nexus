@@ -68,7 +68,7 @@ function ThinkingDots() {
         <span className="size-1.5 rounded-full bg-[#b9a6ff] animate-bounce [animation-delay:-0.15s]" />
         <span className="size-1.5 rounded-full bg-[#b9a6ff] animate-bounce" />
       </span>
-      <span className="ml-1.5">Claude está pensando…</span>
+      <span className="ml-1.5">NEXUS IA está pensando…</span>
     </span>
   );
 }
@@ -98,7 +98,7 @@ const MessageItem = memo(function MessageItem({
   const isSystem = m.author_kind === 'system';
   const mine = m.author_id === me && m.author_kind === 'user';
   const mentioned = !!me && (m.mentions.includes(me) || m.mentions_everyone) && !mine;
-  const name = isClaude ? 'Claude' : isSystem ? 'NEXUS' : displayNameFor(m.author_id, serverId);
+  const name = isClaude ? 'NEXUS IA' : isSystem ? 'NEXUS' : displayNameFor(m.author_id, serverId);
   const color = isClaude ? '#a78bfa' : roleColorFor(m.author_id, serverId) ?? '#8ea1ff';
   const pendingClaude = isClaude && m.meta?.status === 'pending';
   const errorClaude = isClaude && m.meta?.status === 'error';
@@ -170,7 +170,7 @@ const MessageItem = memo(function MessageItem({
             {m.content ? <MessageContent content={m.content} highlightSelf={me} /> : null}
             {errorClaude ? (
               <div className="mt-1 flex items-center gap-1.5 text-[13px] text-danger">
-                <AlertCircle className="size-4" /> {String(m.meta?.error ?? 'O Claude não conseguiu responder.')}
+                <AlertCircle className="size-4" /> {String(m.meta?.error ?? 'A NEXUS IA não conseguiu responder.')}
               </div>
             ) : null}
             {m.edited_at ? <span className="text-[11px] text-fg-3">(editado)</span> : null}

@@ -31,8 +31,8 @@ type Widget = 'projetos' | 'tarefas' | 'duvidas' | 'notificacoes' | 'integracoes
 const WIDGETS: Array<{ key: Widget; label: string }> = [
   { key: 'projetos', label: 'Estado dos projetos' },
   { key: 'jogadores', label: 'Jogadores online' },
-  { key: 'tarefas', label: 'Tarefas do Claude' },
-  { key: 'duvidas', label: 'Dúvidas pendentes do Claude' },
+  { key: 'tarefas', label: 'Tarefas da NEXUS IA' },
+  { key: 'duvidas', label: 'Dúvidas pendentes da NEXUS IA' },
   { key: 'notificacoes', label: 'Notificações importantes' },
   { key: 'integracoes', label: 'Estado das integrações' },
   { key: 'atividade', label: 'Atividade recente' },
@@ -148,7 +148,7 @@ export function OverviewView() {
             <QuickStat icon={<ServerIcon className="size-4" />} label="Servidores" value={servers.length} />
             <QuickStat icon={<Gamepad2 className="size-4" />} label="Projetos ativos" value={projects.filter((p) => p.status === 'ativo').length} />
             {claudeVisible ? (
-              <QuickStat icon={<Sparkles className="size-4" />} label="Tarefas do Claude" value={activeTasks.length} onClick={() => openView({ kind: 'companion' })} />
+              <QuickStat icon={<Sparkles className="size-4" />} label="Tarefas da NEXUS IA" value={activeTasks.length} onClick={() => openView({ kind: 'companion' })} />
             ) : (
               <QuickStat icon={<Users className="size-4" />} label="Pessoas nos servidores" value={new Set(Object.values(members).flat().map((m) => m.user_id)).size} />
             )}
@@ -213,7 +213,7 @@ export function OverviewView() {
                         <li key={a.id} className="flex items-start gap-2.5 text-sm">
                           <Activity className="size-4 text-fg-3 mt-0.5 shrink-0" />
                           <span className="flex-1">
-                            <b>{a.actor_kind === 'claude' ? 'Claude' : a.actor_kind === 'system' ? 'Sistema' : displayNameFor(a.actor_id)}</b>{' '}
+                            <b>{a.actor_kind === 'claude' ? 'NEXUS IA' : a.actor_kind === 'system' ? 'Sistema' : displayNameFor(a.actor_id)}</b>{' '}
                             <span className="text-fg-2">{a.summary}</span>
                           </span>
                           <span className="text-[12px] text-fg-3 shrink-0">{formatRelative(a.created_at)}</span>
@@ -228,7 +228,7 @@ export function OverviewView() {
             <div className="space-y-4">
               {show('duvidas') ? (
                 <Card className="p-4">
-                  <SectionTitle>Dúvidas do Claude</SectionTitle>
+                  <SectionTitle>Dúvidas da NEXUS IA</SectionTitle>
                   {pendingQ.length === 0 ? (
                     <p className="text-sm text-fg-3">Nenhuma decisão pendente.</p>
                   ) : (
@@ -247,7 +247,7 @@ export function OverviewView() {
                 <Card className="p-4">
                   <SectionTitle>Tarefas em andamento</SectionTitle>
                   {activeTasks.length === 0 ? (
-                    <p className="text-sm text-fg-3">O Claude não está trabalhando em nada agora.</p>
+                    <p className="text-sm text-fg-3">A NEXUS IA não está trabalhando em nada agora.</p>
                   ) : (
                     <div className="space-y-3">
                       {activeTasks.slice(0, 5).map((t) => (
@@ -288,7 +288,7 @@ export function OverviewView() {
                   <ul className="space-y-2 text-sm">
                     <Integration ok label="Servidor NEXUS (Supabase)" detail={cfg ? new URL(cfg.supabaseUrl).host : '—'} />
                     <Integration ok={realtimeOk} label="Tempo real" detail={realtimeOk ? 'Conectado' : 'Reconectando…'} />
-                    <Integration ok={!!quota?.allowed} label="Claude (API da Anthropic)" detail={quota?.allowed ? 'Liberado' : quota?.reason ?? 'Sem acesso'} />
+                    <Integration ok={!!quota?.allowed} label="NEXUS IA (API da Anthropic)" detail={quota?.allowed ? 'Liberada' : quota?.reason ?? 'Sem acesso'} />
                     <Integration ok={null} label="Calls (LiveKit)" detail="Verificado ao entrar em uma call" />
                     <Integration ok={players.length > 0 ? true : null} label="Roblox (dados públicos)" detail={players.length ? `${players.length} jogo(s)` : 'Nenhum jogo vinculado'} />
                     <Integration ok={false} label="Roblox (receita)" detail="Requer OAuth oficial — próxima fase" />

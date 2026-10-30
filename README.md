@@ -4,15 +4,16 @@ Central da equipe do **ALPHA — Templo da Magia** (e de outros jogos): chat e c
 
 Funciona no **Windows** (app instalável), no **navegador** e como app no **iPhone, iPad e Android**.
 
-## O que já está pronto (versão 0.1.2)
+## O que já está pronto (versão 0.1.3)
 
 | Área | Situação |
 |---|---|
 | Interface (PC, tablet e celular) | ✅ pronta, igual ao layout de referência; testada em 1536 px, iPad, iPhone e Android |
 | Login, cadastro, recuperação de senha | ✅ no ar — cadastro e login testados no servidor real; a recuperação de senha precisa de um SMTP próprio |
 | Servidores no estilo Discord | ✅ cada pessoa cria o próprio servidor (modelos Amigos, Jogos, Estudo, Estúdio ou do zero); **só entra com link de convite** (PIN opcional, com limite de tentativas); categorias de canais com arrastar e soltar; cargos com ordem e cor livre; apelido no servidor; banimentos; transferir dono; aviso de “entrou no servidor” |
-| Regras de acesso | ✅ **188 testes passando** (`docs/TESTES.md`) |
-| Claude só para o administrador | ✅ padrão: ninguém além do administrador vê ou usa o Claude (o servidor também bloqueia); dá para liberar em Configurações → Administração |
+| Serviços só nos servidores de jogos | ✅ Faturamento Roblox, Projetos, Finanças e Arquivos aparecem nos modelos “Jogos” e “Estúdio de jogos”; o dono liga/desliga nas configurações do servidor |
+| Regras de acesso | ✅ **195 testes passando** (`docs/TESTES.md`) |
+| NEXUS IA (feita com o Claude) só para o administrador | ✅ na interface o assistente se chama **NEXUS IA** (@NEXUS no canal; “NEXUS IA” na call). Só o administrador vê e usa, e só no Início (não aparece dentro dos servidores); o servidor também bloqueia |
 | Chat em tempo real, menções, anexos, busca, não lidas, DMs e grupos | ✅ implementado — falta testar no servidor real |
 | Calls de voz, vídeo e compartilhamento de tela | ✅ no ar (LiveKit Cloud), com qualidade de tela ajustável, volume por pessoa e tela cheia |
 | Claude AI (chat com histórico, imagens, PDF, scripts, contexto do projeto) | ✅ implementado; chave da API configurada — falta **crédito** na conta da API (créditos do Max, `docs/CONFIGURACAO.md` passo 2) |

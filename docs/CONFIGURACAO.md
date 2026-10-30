@@ -7,7 +7,8 @@
 | Supabase | ✅ projeto `nexus` (organização NEXUS, plano gratuito, região São Paulo — `qeugxkmoirqwbmdfwbrt`) |
 | Banco | ✅ as 9 migrações aplicadas; 41 tabelas, todas com regras de acesso (RLS) |
 | Servidores | ✅ estilo Discord: só entra quem tem link de convite; o servidor principal pede também o **PIN** (Configurações do servidor → Convites, só quem gerencia vê) |
-| Claude | ✅ “Claude só para mim” ligado: só o administrador vê e usa o Claude (Configurações → Administração) |
+| NEXUS IA (Claude) | ✅ “NEXUS IA só para mim” ligado: só o administrador vê e usa a IA, e só no Início (Configurações → Administração) |
+| Serviços | ✅ só nos servidores de jogos (Configurações do servidor → Geral → “Serviços de jogos”) |
 | Login | ✅ cadastro por e-mail e senha (mínimo 8 caracteres). **Confirmação de e-mail desligada**: o e-mail padrão do Supabase só entrega para a equipe do projeto (2 por hora). Para a recuperação de senha funcionar para todos, configure um SMTP próprio (passo 1.2) |
 | Funções | ✅ `claude-chat`, `claude-channel`, `livekit-token`, `roblox`, `companion-run` publicadas; segredo `NEXUS_INTERNAL_SECRET` configurado |
 | Coleta do Roblox | ✅ agendada a cada 15 minutos (pg_cron) |

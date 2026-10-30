@@ -18,8 +18,8 @@ export const COMPANION_SCOPES: Array<{ key: string; label: string; description: 
   { key: 'modificar_projetos', label: 'Criar e alterar tarefas', description: 'Registrar bugs, tarefas e melhorias encontradas.', risk: 'medio', available: true },
   { key: 'ver_financas', label: 'Consultar finanças', description: 'Ler lançamentos e resumos financeiros que você pode ver.', risk: 'alto', available: true },
   { key: 'ler_mensagens', label: 'Ler mensagens autorizadas', description: 'Ler o histórico recente de canais quando você pedir.', risk: 'medio', available: true },
-  { key: 'ouvir_call', label: 'Ouvir calls', description: 'Ouvir a call quando VOCÊ chamar o Claude pelo botão da call. Nada é gravado.', risk: 'alto', available: false },
-  { key: 'falar_call', label: 'Falar nas calls', description: 'Responder por voz quando alguém disser "Claude".', risk: 'medio', available: false },
+  { key: 'ouvir_call', label: 'Ouvir calls', description: 'Ouvir a call quando VOCÊ chamar a NEXUS IA pelo botão da call. Nada é gravado.', risk: 'alto', available: false },
+  { key: 'falar_call', label: 'Falar nas calls', description: 'Responder por voz quando alguém disser "NEXUS IA".', risk: 'medio', available: false },
   { key: 'executar_comandos', label: 'Executar comandos no PC', description: 'Rodar comandos no computador (requer o agente local).', risk: 'alto', available: false },
   { key: 'controlar_apps', label: 'Controlar aplicativos', description: 'Roblox Studio e Blender (requer o agente local).', risk: 'alto', available: false },
   { key: 'integracoes_externas', label: 'Integrações externas', description: 'Usar serviços como Roblox e Google Drive.', risk: 'medio', available: false },
@@ -106,8 +106,8 @@ export const useCompanion = create<CompanionState>((set, get) => ({
         const prev = get().tasks.find((x) => x.id === t.id);
         set({ tasks: prev ? get().tasks.map((x) => (x.id === t.id ? t : x)) : [t, ...get().tasks] });
         if (prev && prev.status !== t.status) {
-          if (t.status === 'concluida') toast.success('Claude concluiu uma tarefa', t.title);
-          if (t.status === 'falhou') toast.warn('Uma tarefa do Claude falhou', t.error ?? t.title);
+          if (t.status === 'concluida') toast.success('NEXUS IA concluiu uma tarefa', t.title);
+          if (t.status === 'falhou') toast.warn('Uma tarefa da NEXUS IA falhou', t.error ?? t.title);
         }
       });
       onTable('companion_questions', (p) => {

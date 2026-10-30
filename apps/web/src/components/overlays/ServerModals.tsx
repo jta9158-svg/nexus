@@ -726,7 +726,7 @@ export function ChannelModal() {
           </div>
         ) : null}
         {kind === 'text' && claudeVisible ? (
-          <Toggle checked={claude} onChange={setClaude} label="Permitir @Claude neste canal" description="Você pode chamar o @Claude aqui. A resposta aparece no canal para quem está nele." />
+          <Toggle checked={claude} onChange={setClaude} label="Permitir @NEXUS neste canal" description="Você pode chamar a IA com @NEXUS aqui. A resposta aparece no canal para quem está nele." />
         ) : null}
       </div>
     </Modal>

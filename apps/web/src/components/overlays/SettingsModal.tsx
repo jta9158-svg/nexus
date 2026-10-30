@@ -244,7 +244,7 @@ function NotificationsTab() {
           {perm === 'denied' ? <p className="text-[12px] text-fg-3">Para liberar depois, use as configurações do navegador para este site.</p> : null}
         </>
       )}
-      <p className="text-[12px] text-fg-3">Você é notificado quando alguém te menciona, quando recebe mensagem privada e quando o Claude precisa de uma decisão sua.</p>
+      <p className="text-[12px] text-fg-3">Você é notificado quando alguém te menciona, quando recebe mensagem privada e quando a NEXUS IA precisa de uma decisão sua.</p>
     </div>
   );
 }
@@ -453,7 +453,7 @@ function AdminTab() {
         <Field label="Limite diário por pessoa (tokens)">
           <Input type="number" min={0} value={settings.claude_daily_tokens_per_user} onChange={(e) => setSettings({ ...settings, claude_daily_tokens_per_user: Number(e.target.value) })} />
         </Field>
-        <Field label="Orçamento mensal (US$)" hint="Ao atingir, o Claude para para todos até o mês virar.">
+        <Field label="Orçamento mensal (US$)" hint="Ao atingir, a NEXUS IA para para todos até o mês virar.">
           <Input type="number" min={0} step="1" value={settings.claude_monthly_budget_usd} onChange={(e) => setSettings({ ...settings, claude_monthly_budget_usd: Number(e.target.value) })} />
         </Field>
       </div>
@@ -461,8 +461,8 @@ function AdminTab() {
       <Toggle
         checked={settings.claude_admin_only ?? true}
         onChange={(v) => setSettings({ ...settings, claude_admin_only: v })}
-        label="Claude só para mim"
-        description="Ligado: só você vê e usa o Claude (chat, Companion, @Claude e Claude na call). Para as outras pessoas o Claude nem aparece, e o servidor bloqueia. Se você chamar o @Claude num canal ou numa call, quem estiver ali vê ou ouve a resposta."
+        label="NEXUS IA só para mim"
+        description="Ligado: só você vê e usa a NEXUS IA (chat, Companion, @NEXUS e a IA na call). Para as outras pessoas a NEXUS IA nem aparece, e o servidor bloqueia. Se você chamar a IA (@NEXUS) num canal ou numa call, quem estiver ali vê ou ouve a resposta."
       />
       <Toggle
         checked={settings.calls_everyone ?? true}
@@ -476,7 +476,7 @@ function AdminTab() {
       {settings.claude_admin_only ?? true ? null : (
       <div>
         <div className="text-[12px] font-semibold uppercase tracking-wide text-fg-3 mb-2 flex items-center gap-1.5">
-          <Shield className="size-3.5" /> Liberação individual do Claude
+          <Shield className="size-3.5" /> Liberação individual da NEXUS IA
         </div>
         <div className="flex gap-2 mb-2">
           <Input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="nome de usuário" />
@@ -490,7 +490,7 @@ function AdminTab() {
             <Button size="sm" variant="ghost" icon={<Trash2 className="size-4" />} onClick={() => void revoke(a.user_id)} aria-label="Revogar" />
           </div>
         ))}
-        <p className="text-[12px] text-fg-3">Membros com o cargo “Usar o Claude” nos seus servidores já têm acesso automaticamente.</p>
+        <p className="text-[12px] text-fg-3">Membros com o cargo “Usar a NEXUS IA” nos seus servidores já têm acesso automaticamente.</p>
       </div>
       )}
     </div>

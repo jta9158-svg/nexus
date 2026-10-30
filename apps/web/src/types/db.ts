@@ -35,6 +35,8 @@ export interface Server {
   /** Canal de texto onde aparecem avisos como "Fulano entrou no servidor". */
   system_channel_id?: string | null;
   welcome_messages?: boolean;
+  /** Mostra os Serviços (Faturamento Roblox, Projetos, Finanças, Arquivos) — servidores de jogos. */
+  services_enabled?: boolean;
   created_at: string;
 }
 

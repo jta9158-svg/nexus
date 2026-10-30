@@ -140,8 +140,8 @@ function NewTaskModal({ open, onClose, projects }: { open: boolean; onClose: () 
     <Modal
       open={open}
       onClose={onClose}
-      title="Nova tarefa para o Claude"
-      description="Ela roda no servidor: continua mesmo se você fechar o app. O Claude pergunta quando precisar de uma decisão."
+      title="Nova tarefa para a NEXUS IA"
+      description="Ela roda no servidor: continua mesmo se você fechar o app. A NEXUS IA pergunta quando precisar de uma decisão."
       size="lg"
       footer={
         <>
@@ -158,7 +158,7 @@ function NewTaskModal({ open, onClose, projects }: { open: boolean; onClose: () 
         <Field label="Título">
           <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Analisar scripts de combate do ALPHA" maxLength={200} />
         </Field>
-        <Field label="O que o Claude deve fazer" hint="Seja específico: objetivo, arquivos envolvidos e o que você espera receber no final.">
+        <Field label="O que a NEXUS IA deve fazer" hint="Seja específico: objetivo, arquivos envolvidos e o que você espera receber no final.">
           <Textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} rows={5} placeholder="Leia os scripts enviados na pasta Scripts/Combate, encontre bugs e problemas de desempenho e proponha correções. Registre cada bug como tarefa no projeto." />
         </Field>
         <div className="grid sm:grid-cols-2 gap-3">
@@ -264,7 +264,7 @@ export function CompanionView() {
     <div className="flex-1 min-h-0 flex flex-col">
       <ViewHeader
         icon={<Sparkles className="size-5" />}
-        title="Claude Companion"
+        title="NEXUS Companion"
         subtitle="Assistente da equipe: tarefas em segundo plano, dúvidas e permissões"
         actions={
           <Button size="sm" icon={<Plus className="size-4" />} onClick={() => setCreating(true)} disabled={!quota?.allowed}>
@@ -312,7 +312,7 @@ export function CompanionView() {
             </Card>
           </div>
 
-          {!quota?.allowed ? <Notice tone="warn" title="O Claude ainda não está liberado para você">{quota?.reason}</Notice> : null}
+          {!quota?.allowed ? <Notice tone="warn" title="A NEXUS IA ainda não está liberada para você">{quota?.reason}</Notice> : null}
 
           <Tabs
             value={tab}
@@ -338,7 +338,7 @@ export function CompanionView() {
                     </Button>
                   }
                 >
-                  Peça algo demorado — o Claude trabalha em segundo plano enquanto você conversa ou joga, e avisa quando terminar.
+                  Peça algo demorado — a NEXUS IA trabalha em segundo plano enquanto você conversa ou joga, e avisa quando terminar.
                 </EmptyState>
               ) : null}
               {[{ title: 'Em execução', list: running }, { title: 'Na fila e pausadas', list: waiting }, { title: 'Finalizadas', list: done }].map((g) =>
@@ -358,7 +358,7 @@ export function CompanionView() {
 
           {tab === 'duvidas' ? (
             <div className="space-y-3">
-              {pending.length === 0 ? <EmptyState icon={<CircleDashed className="size-10" />} title="Nenhuma dúvida pendente">Quando o Claude precisar de uma decisão sua, ela aparece aqui e como notificação.</EmptyState> : null}
+              {pending.length === 0 ? <EmptyState icon={<CircleDashed className="size-10" />} title="Nenhuma dúvida pendente">Quando a NEXUS IA precisar de uma decisão sua, ela aparece aqui e como notificação.</EmptyState> : null}
               {pending.map((q) => {
                 const task = store.tasks.find((t) => t.id === q.task_id);
                 return (
@@ -427,7 +427,7 @@ export function CompanionView() {
           {tab === 'historico' ? (
             <Card className="p-4 sm:p-5">
               <div className="flex items-center justify-between gap-2 mb-3">
-                <p className="text-sm text-fg-2">O que o Claude fez e por quê. Gravações de áudio não são guardadas.</p>
+                <p className="text-sm text-fg-2">O que a NEXUS IA fez e por quê. Gravações de áudio não são guardadas.</p>
                 <div className="flex gap-2">
                   <Button size="sm" variant="secondary" icon={<Download className="size-4" />} onClick={exportLogs} disabled={!store.logs.length}>
                     Exportar
@@ -484,12 +484,12 @@ export function CompanionView() {
                 </Field>
               </Card>
               <Notice tone="info" title="O que o modo muda hoje">
-                Nas tarefas em segundo plano: em “Só quando chamado” e “Trabalhador em segundo plano” o Claude só pede sua atenção quando uma dúvida bloqueia o
+                Nas tarefas em segundo plano: em “Só quando chamado” e “Trabalhador em segundo plano” a NEXUS IA só pede sua atenção quando uma dúvida bloqueia o
                 trabalho (as outras ficam na aba Dúvidas); em “Participante ativo” ele pode registrar sugestões extras. Nos canais de texto ele só responde quando
-                alguém escreve @Claude, em qualquer modo.
+                alguém escreve @NEXUS, em qualquer modo.
               </Notice>
               <Card className="p-4 sm:p-5 space-y-3">
-                <div className="font-semibold">Voz do Claude na call</div>
+                <div className="font-semibold">Voz da NEXUS IA na call</div>
                 <div className="grid sm:grid-cols-2 gap-3">
                   <Field label="Voz">
                     <Select value={store.settings?.voice_option ?? 'voz1'} onChange={(e) => void store.setVoice({ voice_option: e.target.value as 'voz1' | 'voz2' })}>
@@ -515,8 +515,8 @@ export function CompanionView() {
               <Notice tone="info" title="Como funciona na call">
                 {voiceReady ? (
                   <>
-                    Na call, toque no botão do robô para chamar o Claude. Ele só entra quando você chama, mostra que está ouvindo e pode ser pausado, silenciado ou tirado da
-                    call por quem chamou. Ele responde quando alguém diz “Claude” (no modo “Participante ativo” pode comentar sozinho quando for útil). Não grava a conversa e
+                    Na call, toque no botão do robô para chamar a NEXUS IA. Ela só entra quando você chama, mostra que está ouvindo e pode ser pausada, silenciada ou tirada da
+                    call por quem chamou. Ela responde quando alguém diz “NEXUS IA” (no modo “Participante ativo” pode comentar sozinha quando for útil). Não grava a conversa e
                     nunca fala de finanças na call. Precisa das permissões “Ouvir calls” e “Falar nas calls” liberadas aqui.
                   </>
                 ) : (
