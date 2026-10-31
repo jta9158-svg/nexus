@@ -9,13 +9,10 @@ import {
   DisconnectReason,
   Room,
   RoomEvent,
-  ScreenSharePresets,
   Track,
   type Participant,
   type RemoteParticipant,
   type RemoteTrack,
-  type ScreenShareCaptureOptions,
-  type TrackPublishOptions,
 } from 'livekit-client';
 import { callFunction } from '../lib/supabase';
 import { setVoicePresence } from '../lib/realtime';
@@ -23,6 +20,7 @@ import { playPing } from '../lib/notify';
 import { friendlyError } from '../lib/errors';
 import { hasPerm } from '../lib/permissions';
 import { applyNoiseFilter, readNoisePref, saveNoisePref, type NoiseState } from '../lib/noise';
+import { DEFAULT_SCREEN_QUALITY, isScreenQuality, pickScreenEncoder, screenShareSettings, type ScreenEncoder, type ScreenQuality } from '../lib/screenShare';
 import { toast } from './toast';
 import { useApp } from './app';
 
@@ -43,39 +41,7 @@ export interface CallParticipant {
   agentMuted?: boolean;
 }
 
-/** Qualidade do compartilhamento de tela (gasta mais ou menos internet). */
-export type ScreenQuality = 'nitida' | 'fluida' | 'economica';
-
-export const SCREEN_QUALITIES: Array<{ key: ScreenQuality; label: string; description: string }> = [
-  { key: 'nitida', label: 'Nítida', description: '1080p a 15 fps — ideal para código, textos e o Roblox Studio.' },
-  { key: 'fluida', label: 'Fluida (jogos)', description: '1080p a 30 fps — movimento suave para mostrar gameplay.' },
-  { key: 'economica', label: 'Econômica', description: '720p a 15 fps — para internet fraca ou 4G.' },
-];
-
-function screenSettings(q: ScreenQuality): { capture: ScreenShareCaptureOptions; publish: TrackPublishOptions } {
-  const preset = q === 'fluida' ? ScreenSharePresets.h1080fps30 : q === 'economica' ? ScreenSharePresets.h720fps15 : ScreenSharePresets.h1080fps15;
-  return {
-    capture: {
-      audio: true,
-      systemAudio: 'include',
-      selfBrowserSurface: 'exclude',
-      surfaceSwitching: 'include',
-      contentHint: q === 'fluida' ? 'motion' : 'detail',
-      resolution: { width: preset.width, height: preset.height, frameRate: preset.encoding.maxFramerate ?? 15 },
-    },
-    publish: {
-      screenShareEncoding: preset.encoding,
-      // Camada leve para quem vê a tela em miniatura (economiza internet de todos)
-      screenShareSimulcastLayers: q === 'economica' ? [] : [ScreenSharePresets.h360fps3],
-      videoCodec: 'vp9',
-      backupCodec: true,
-      // Áudio do computador (jogo, vídeo) com qualidade de música e sem cortes
-      audioPreset: AudioPresets.musicHighQualityStereo,
-      dtx: false,
-      red: false,
-    },
-  };
-}
+export { SCREEN_QUALITIES, type ScreenQuality } from '../lib/screenShare';
 
 type Status = 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'error';
 
@@ -92,6 +58,8 @@ interface CallState {
   deafened: boolean;
   needsAudioUnlock: boolean;
   screenQuality: ScreenQuality;
+  /** Codificador em uso no compartilhamento de tela (placa de vídeo ou processador). */
+  screenEncoder: ScreenEncoder | null;
   volumes: Record<string, number>;
   claudeBusy: boolean;
   version: number;
@@ -127,9 +95,9 @@ export function readDevicePrefs(): { audioinput?: string; audiooutput?: string; 
 function readQuality(): ScreenQuality {
   try {
     const q = localStorage.getItem(QUALITY_KEY);
-    return q === 'fluida' || q === 'economica' || q === 'nitida' ? q : 'nitida';
+    return isScreenQuality(q) ? q : DEFAULT_SCREEN_QUALITY;
   } catch {
-    return 'nitida';
+    return DEFAULT_SCREEN_QUALITY;
   }
 }
 
@@ -260,6 +228,7 @@ export const useCall = create<CallState>((set, get) => {
     deafened: false,
     needsAudioUnlock: false,
     screenQuality: readQuality(),
+    screenEncoder: null,
     volumes: {},
     claudeBusy: false,
     version: 0,
@@ -423,9 +392,15 @@ export const useCall = create<CallState>((set, get) => {
         return;
       }
       const enabling = !room.localParticipant.isScreenShareEnabled;
-      const { capture, publish } = screenSettings(get().screenQuality);
+      const q = get().screenQuality;
+      const enc = await pickScreenEncoder(q);
+      const { capture, publish } = screenShareSettings(q, enc);
       try {
         await room.localParticipant.setScreenShareEnabled(enabling, capture, publish);
+        set({ screenEncoder: enabling ? enc : null });
+        if (enabling && q === 'maxima' && !enc.hardware) {
+          toast.info('Compartilhando a 60 fps pelo processador', 'Este computador não acelera pela placa de vídeo. Se travar, use “Fluida (30 fps)”.');
+        }
       } catch (err) {
         const name = (err as Error).name;
         if (name !== 'NotAllowedError' && name !== 'AbortError') toast.error(err, 'Não foi possível compartilhar a tela');
@@ -444,7 +419,9 @@ export const useCall = create<CallState>((set, get) => {
       const room = get().room;
       if (room?.localParticipant.isScreenShareEnabled) {
         await room.localParticipant.setScreenShareEnabled(false).catch(() => undefined);
-        const { capture, publish } = screenSettings(q);
+        const enc = await pickScreenEncoder(q);
+        const { capture, publish } = screenShareSettings(q, enc);
+        set({ screenEncoder: enc });
         await room.localParticipant.setScreenShareEnabled(true, capture, publish).catch((err) => {
           const name = (err as Error).name;
           if (name !== 'NotAllowedError' && name !== 'AbortError') toast.error(err, 'Não foi possível trocar a qualidade da tela');

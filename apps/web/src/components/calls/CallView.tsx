@@ -27,6 +27,7 @@ import {
 import { useApp, displayNameFor } from '../../store/app';
 import { useClaudeVisible, useSession } from '../../store/session';
 import { SCREEN_QUALITIES, useCall, type CallParticipant } from '../../store/call';
+import { encoderLabel, pickScreenEncoder, type ScreenEncoder } from '../../lib/screenShare';
 import { useVoiceRooms, useVoiceRoomsSync } from '../../store/voiceRooms';
 import { canShareScreen, desktop, isIOS } from '../../lib/platform';
 import type { DesktopScreenSource } from '../../types/desktop';
@@ -240,8 +241,15 @@ export function ScreenPicker() {
 function ScreenQualityMenu({ onClose }: { onClose: () => void }) {
   const quality = useCall((s) => s.screenQuality);
   const setQuality = useCall((s) => s.setScreenQuality);
+  const sharing = useCall((s) => s.screenOn);
+  const current = useCall((s) => s.screenEncoder);
+  const [best, setBest] = useState<ScreenEncoder | null>(null);
+  useEffect(() => {
+    void pickScreenEncoder('fluida').then(setBest).catch(() => setBest(null));
+  }, []);
+  const info = sharing && current ? current : best;
   return (
-    <div className="absolute bottom-[calc(100%+10px)] left-1/2 -translate-x-1/2 w-[290px] rounded-2xl border border-line bg-[#11161f] shadow-2xl p-1.5 z-20">
+    <div className="absolute bottom-[calc(100%+10px)] left-1/2 -translate-x-1/2 w-[300px] max-w-[calc(100vw-24px)] rounded-2xl border border-line bg-[#11161f] shadow-2xl p-1.5 z-20">
       <div className="px-2.5 pt-1.5 pb-1 text-[12px] font-semibold uppercase tracking-wide text-fg-3">Qualidade da tela</div>
       {SCREEN_QUALITIES.map((q) => (
         <button
@@ -259,6 +267,11 @@ function ScreenQualityMenu({ onClose }: { onClose: () => void }) {
           <div className="text-[12px] text-fg-2">{q.description}</div>
         </button>
       ))}
+      {info ? (
+        <div className="px-2.5 pt-1.5 pb-1 text-[11.5px] text-fg-3 border-t border-line-soft mt-1">
+          {sharing && current ? `Codificando ${encoderLabel(info)}.` : info.hardware ? `Este aparelho codifica ${encoderLabel(info)}: fica leve, até jogando.` : 'Este aparelho codifica pelo processador: se travar, use uma qualidade menor.'}
+        </div>
+      ) : null}
     </div>
   );
 }

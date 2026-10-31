@@ -34,4 +34,5 @@ jobs:
         run: |
           npm ci
           node --experimental-strip-types tests/layout.test.mjs
+          node --experimental-strip-types tests/screenShare.test.mjs
           npm run build

@@ -1,6 +1,6 @@
 # Testes do NEXUS
 
-Situação em **30/10/2026**, versão **0.1.9**. Tudo abaixo foi executado de verdade; o que ainda não pôde ser testado está marcado como **pendente**, com o motivo.
+Situação em **31/10/2026**, versão **0.1.10**. Tudo abaixo foi executado de verdade; o que ainda não pôde ser testado está marcado como **pendente**, com o motivo.
 
 ## 1. Testes automáticos
 
@@ -9,6 +9,8 @@ Situação em **30/10/2026**, versão **0.1.9**. Tudo abaixo foi executado de ve
 | Banco e regras de acesso (PostgreSQL 18 via PGlite, imitando o Supabase: Auth, Storage, Realtime) | `cd supabase/tests && npm install && npm test` | **217 passaram, 0 falharam** |
 | Página do convite no site (PC, Android, iPhone): mostra o servidor, “Abrir no app NEXUS” (`nexus://` no PC, `intent://` no Android) e “Entrar pelo navegador” | `node apps/site/tests/invite.mjs` | **3 aparelhos ok** |
 | Organização dos canais (categorias, arrastar e soltar, subir/descer) | `node --experimental-strip-types apps/web/tests/layout.test.mjs` | **9 passaram, 0 falharam** |
+| Compartilhamento de tela: escolha do codificador (placa de vídeo primeiro: AV1 > VP9 > H.264; sem placa, 60 fps com H.264) e configuração de cada qualidade (60/30/15 fps, “manter os quadros” nos modos de movimento, sem a antiga camada de 3 fps) | `node --experimental-strip-types apps/web/tests/screenShare.test.mjs` | **6 passaram, 0 falharam** |
+| Compartilhamento de tela, antes × depois, num computador fraco (2 núcleos, sem placa de vídeo; envio e recebimento locais com WebRTC de verdade no Chromium, imagem em movimento) | script de medição com `RTCPeerConnection` | padrão antigo: **15 fps** em 1080p · padrão novo (Fluida): **30 fps** em 1080p · Máxima sem placa de vídeo: **60 fps** (a resolução baixou para 720p para não travar; com placa de vídeo fica em 1080p) |
 | Funções do servidor (Deno): cliente da API do Claude contra um servidor falso no formato oficial (streaming, `tool_use`, erro de crédito, custo), token do LiveKit (HS256), modos do Companion, regras de voz (nome “Claude”, silêncio, histórico, token de servidor), lista de quem está em cada canal de voz vinda da LiveKit (sem gravações, IA marcada, token por sala) | `deno test --allow-net --allow-env supabase/functions/tests/` | **15 passaram, 0 falharam**; a mesma lista também foi consultada na LiveKit Cloud de verdade (9 canais, sem erro) |
 | Agente de voz (Python): regras (chamado pelo nome, modos, vozes, troca de quem fala, comandos) e o agente em modo texto contra um servidor falso (responde quando chamado, não interrompe conversa, pausado/silenciado, histórico) | `cd apps/voice-agent && pip install -r requirements.txt && python -m unittest discover -s tests` | **11 passaram, 0 falharam** |
 | Agente publicado na LiveKit Cloud | logs da LiveKit + despacho de teste para uma sala | trabalhador `nexus-claude` registrado; entrou na sala de teste, estado “ouvindo”, sem erros |

@@ -29,6 +29,8 @@ Para uma equipe de até ~20 pessoas usando todo dia, o **Free** costuma bastar (
 | Pessoas conectadas ao mesmo tempo | 100 | 1.000 |
 | Minutos de agente de voz (Companion) | 1.000/mês | 5.000/mês (+US$ 0,01/min) |
 
+**Compartilhamento de tela:** a internet de cada pessoa que assiste conta nos 50 GB do Build. Por hora, para cada pessoa assistindo: Econômica ≈ 0,7 GB · Texto nítido ≈ 1,4 GB · Fluida (padrão) ≈ 2,3 GB · Máxima (60 fps) ≈ 4 GB. Ex.: 1 h por dia de tela Fluida para 2 pessoas ≈ 4,6 GB/dia → os 50 GB acabam em ~11 dias. Para durar o mês, use a Econômica ou o Texto nítido no dia a dia e a Máxima só quando precisar.
+
 **Anti-ruído (Krisp):** incluído em todos os planos, inclusive o Build gratuito, sem custo por minuto (“Background noise suppression … Krisp NC: Yes” na tabela de preços). Roda no aparelho de quem fala; o pacote (~6 MB, ~2 MB compactado) é baixado só na primeira call. O “isolamento de voz” (outro modelo, que também tira vozes de fundo) tem só 100 min/mês no Build — o NEXUS **não** usa esse.
 
 Conta de minutos = pessoas × minutos. Ex.: 5 pessoas por 2 h/dia → 5 × 120 × 30 = **18.000 min/mês** → passa do Build; cabe no Ship. Com calls ocasionais (≈ 8 h/mês de call com 5 pessoas) o Build gratuito basta. Alternativa: hospedar o LiveKit (código aberto) num servidor próprio (~US$ 5–20/mês), com mais trabalho de manutenção.

@@ -4,7 +4,7 @@ Central da equipe do **ALPHA — Templo da Magia** (e de outros jogos): chat e c
 
 Funciona no **Windows** (app instalável), no **navegador** e como app no **iPhone, iPad e Android**.
 
-## O que já está pronto (versão 0.1.9)
+## O que já está pronto (versão 0.1.10)
 
 | Área | Situação |
 |---|---|
@@ -17,7 +17,7 @@ Funciona no **Windows** (app instalável), no **navegador** e como app no **iPho
 | Regras de acesso | ✅ **217 testes passando** (`docs/TESTES.md`) |
 | NEXUS IA (feita com o Claude) | ⏸️ **desligada por enquanto**: escondida em todos os aparelhos e para todo mundo, inclusive o administrador (chat, Companion, @NEXUS, IA na call e as configurações dela). O código continua pronto; para religar, troque `NEXUS_IA_ATIVA` para `true` em `apps/web/src/store/session.ts` e publique uma versão. Antes de desligar, só o administrador via e usava |
 | Chat em tempo real, menções, anexos, busca, não lidas, DMs e grupos | ✅ implementado — falta testar no servidor real |
-| Calls de voz, vídeo e compartilhamento de tela | ✅ no ar (LiveKit Cloud), com qualidade de tela ajustável, volume por pessoa e tela cheia. Quem está em cada canal de voz aparece embaixo do canal, como no Discord (presença em tempo real + lista da própria LiveKit), com quem está falando destacado. **Anti-ruído** (modelo Krisp da LiveKit, incluído no plano gratuito) ligado por padrão, com botão na call e em Configurações → Voz e vídeo |
+| Calls de voz, vídeo e compartilhamento de tela | ✅ no ar (LiveKit Cloud), com volume por pessoa e tela cheia. **Compartilhamento de tela**: Máxima (1080p 60 fps), Fluida (1080p 30 fps, padrão), Texto nítido (até 1440p) e Econômica (720p 30 fps); usa o codificador que a placa de vídeo acelera (AV1, VP9 ou H.264) e, nos modos de movimento, mantém os quadros por segundo quando a internet aperta. Quem está em cada canal de voz aparece embaixo do canal, como no Discord (presença em tempo real + lista da própria LiveKit), com quem está falando destacado. **Anti-ruído** (modelo Krisp da LiveKit, incluído no plano gratuito) ligado por padrão, com botão na call e em Configurações → Voz e vídeo |
 | Claude AI (chat com histórico, imagens, PDF, scripts, contexto do projeto) | ✅ implementado; chave da API configurada — falta **crédito** na conta da API (créditos do Max, `docs/CONFIGURACAO.md` passo 2) |
 | @Claude nos canais | ✅ implementado — falta crédito na conta da API |
 | Claude Companion: modos, tarefas em segundo plano, dúvidas, permissões, histórico | ✅ implementado (executor no servidor); regras testadas no banco — falta crédito na conta da API |
