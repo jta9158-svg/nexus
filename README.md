@@ -4,7 +4,7 @@ Central da equipe do **ALPHA — Templo da Magia** (e de outros jogos): chat e c
 
 Funciona no **Windows** (app instalável), no **navegador** e como app no **iPhone, iPad e Android**.
 
-## O que já está pronto (versão 0.1.10)
+## O que já está pronto (versão 0.1.11)
 
 | Área | Situação |
 |---|---|
@@ -28,8 +28,8 @@ Funciona no **Windows** (app instalável), no **navegador** e como app no **iPho
 | Roblox: jogadores online, visitas, favoritos (API pública oficial) | ✅ implementado |
 | Roblox: receita/Robux pela API oficial (Analytics Query API) | ⏳ fase 6 — precisa de uma chave da Open Cloud sua |
 | Instalador Windows (.exe) | ✅ gerado e verificado (`apps/desktop`) |
-| App Android (.apk) | ✅ gerado e verificado (`apps/mobile`) |
-| iPhone/iPad | ✅ instalável pela Tela de Início (PWA) |
+| App Android (.apk) | ✅ gerado e verificado (`apps/mobile`). **A call continua quando você abre outro app**: um serviço em primeiro plano (notificação “Em uma call no NEXUS”) impede o Android de suspender o app |
+| iPhone/iPad | ✅ instalável pela Tela de Início (PWA). Na call a tela fica acesa; se você sair do app o iPhone pausa a call (limite do iOS para sites), e ela **volta sozinha** quando você reabre o NEXUS |
 | Página de download que reconhece o aparelho | ✅ pronta (`apps/site`) |
 | Publicação automática (GitHub Actions) | ✅ no ar: https://jta9158-svg.github.io/nexus/ |
 

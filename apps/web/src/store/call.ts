@@ -21,6 +21,7 @@ import { friendlyError } from '../lib/errors';
 import { hasPerm } from '../lib/permissions';
 import { applyNoiseFilter, readNoisePref, saveNoisePref, type NoiseState } from '../lib/noise';
 import { DEFAULT_SCREEN_QUALITY, isScreenQuality, pickScreenEncoder, screenShareSettings, type ScreenEncoder, type ScreenQuality } from '../lib/screenShare';
+import { startCallKeepAlive, stopCallKeepAlive } from '../lib/callKeepAlive';
 import { toast } from './toast';
 import { useApp } from './app';
 
@@ -79,6 +80,9 @@ interface CallState {
   inviteClaude: () => Promise<void>;
   removeClaude: () => Promise<void>;
   claudeCommand: (action: 'pausar_escuta' | 'retomar_escuta' | 'silenciar' | 'falar') => Promise<void>;
+  /** Canal para reconectar sozinho ao voltar para o app, se a call caiu em segundo plano. */
+  reconnect: { serverId: string; channelId: string } | null;
+  tryReconnect: () => void;
 }
 
 const DEVICE_KEY = 'nexus.devices.v1';
@@ -234,12 +238,13 @@ export const useCall = create<CallState>((set, get) => {
     version: 0,
     noiseOn: readNoisePref(),
     noiseState: 'desligado',
+    reconnect: null,
 
     join: async (serverId, channelId) => {
       const cur = get();
       if (cur.channelId === channelId && (cur.status === 'connected' || cur.status === 'connecting')) return;
       if (cur.room) await get().leave();
-      set({ status: 'connecting', error: null, serverId, channelId, participants: [], deafened: false, volumes: {}, noiseState: get().noiseOn ? 'carregando' : 'desligado' });
+      set({ status: 'connecting', error: null, serverId, channelId, participants: [], deafened: false, volumes: {}, noiseState: get().noiseOn ? 'carregando' : 'desligado', reconnect: null });
       try {
         const { token, url } = await callFunction<{ token: string; url: string; room: string }>('livekit-token', { channel_id: channelId });
         const prefs = readDevicePrefs();
@@ -309,6 +314,7 @@ export const useCall = create<CallState>((set, get) => {
             clearAudio();
             if (!wasActive) return;
             setVoicePresence(null, null);
+            void stopCallKeepAlive();
             const msg =
               reason === DisconnectReason.DUPLICATE_IDENTITY
                 ? 'Você entrou nesta call em outro aparelho.'
@@ -317,7 +323,23 @@ export const useCall = create<CallState>((set, get) => {
                   : reason === DisconnectReason.CLIENT_INITIATED
                     ? null
                     : 'A conexão com a call caiu.';
-            set({ status: msg ? 'error' : 'idle', error: msg, room: null, participants: [], noiseState: 'desligado', serverId: msg ? serverId : null, channelId: msg ? channelId : null });
+            // Queda "de verdade" (não foi você que saiu, nem foi removido): guarda o
+            // canal para reconectar sozinho quando o app voltar para a frente.
+            const dropped =
+              reason !== undefined &&
+              reason !== DisconnectReason.CLIENT_INITIATED &&
+              reason !== DisconnectReason.DUPLICATE_IDENTITY &&
+              reason !== DisconnectReason.PARTICIPANT_REMOVED;
+            set({
+              status: msg ? 'error' : 'idle',
+              error: msg,
+              room: null,
+              participants: [],
+              noiseState: 'desligado',
+              serverId: msg ? serverId : null,
+              channelId: msg ? channelId : null,
+              reconnect: dropped ? { serverId, channelId } : null,
+            });
           });
 
         await room.connect(url, token);
@@ -334,6 +356,7 @@ export const useCall = create<CallState>((set, get) => {
         }
         playPing('join');
         sync();
+        void startCallKeepAlive(hasPerm(permsFor(serverId), 'speak'));
       } catch (err) {
         const r = get().room;
         if (r) await r.disconnect().catch(() => undefined);
@@ -345,12 +368,21 @@ export const useCall = create<CallState>((set, get) => {
 
     leave: async () => {
       const room = get().room;
-      set({ room: null });
+      set({ room: null, reconnect: null });
       clearAudio();
       setVoicePresence(null, null);
+      void stopCallKeepAlive();
       if (room && room.state !== ConnectionState.Disconnected) await room.disconnect(true).catch(() => undefined);
       if (room) playPing('leave');
       set({ status: 'idle', error: null, serverId: null, channelId: null, participants: [], micOn: false, camOn: false, screenOn: false, deafened: false, noiseState: 'desligado' });
+    },
+
+    tryReconnect: () => {
+      const { reconnect, status } = get();
+      if (!reconnect || status === 'connecting' || status === 'connected' || status === 'reconnecting') return;
+      const { serverId, channelId } = reconnect;
+      set({ reconnect: null });
+      void get().join(serverId, channelId);
     },
 
     toggleMic: async () => {
@@ -513,4 +545,11 @@ if (typeof window !== 'undefined') {
     const room = useCall.getState().room;
     if (room) void room.disconnect();
   });
+  // Ao voltar para o app (ou a internet voltar), reentra na call que caiu sozinha.
+  const resume = () => {
+    if (document.visibilityState === 'visible') useCall.getState().tryReconnect();
+  };
+  document.addEventListener('visibilitychange', resume);
+  window.addEventListener('focus', resume);
+  window.addEventListener('online', () => useCall.getState().tryReconnect());
 }
