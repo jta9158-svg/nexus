@@ -8,8 +8,10 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ServiceInfo;
+import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.IBinder;
+import android.os.PowerManager;
 
 import androidx.core.app.NotificationCompat;
 
@@ -24,11 +26,17 @@ public class CallService extends Service {
     public static final String ACTION_STOP = "app.nexus.mobile.CALL_STOP";
     private static final String CHANNEL_ID = "nexus_call";
     private static final int NOTIF_ID = 4711;
+    // Até 6 h de call; depois disso o próprio áudio ativo continua segurando o aparelho.
+    private static final long WAKE_LOCK_MAX_MS = 6L * 60 * 60 * 1000;
+
+    private PowerManager.WakeLock wakeLock;
+    private WifiManager.WifiLock wifiLock;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         final String action = intent != null ? intent.getAction() : null;
         if (ACTION_STOP.equals(action)) {
+            releaseLocks();
             stopForegroundCompat();
             stopSelf();
             return START_NOT_STICKY;
@@ -66,7 +74,59 @@ public class CallService extends Service {
                 return START_NOT_STICKY;
             }
         }
+        acquireLocks();
         return START_STICKY;
+    }
+
+    /**
+     * Com a tela apagada, segura o processador e o Wi-Fi em modo de baixa latência
+     * enquanto a call durar (como os apps de chamada), para a voz não picotar nem cair.
+     */
+    private void acquireLocks() {
+        try {
+            if (wakeLock == null) {
+                PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+                if (pm != null) {
+                    wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "NEXUS::Call");
+                    wakeLock.setReferenceCounted(false);
+                    wakeLock.acquire(WAKE_LOCK_MAX_MS);
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        try {
+            if (wifiLock == null) {
+                WifiManager wm = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+                if (wm != null) {
+                    int mode = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+                        ? WifiManager.WIFI_MODE_FULL_LOW_LATENCY
+                        : WifiManager.WIFI_MODE_FULL_HIGH_PERF;
+                    wifiLock = wm.createWifiLock(mode, "NEXUS::Call");
+                    wifiLock.setReferenceCounted(false);
+                    wifiLock.acquire();
+                }
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void releaseLocks() {
+        try {
+            if (wakeLock != null && wakeLock.isHeld()) wakeLock.release();
+        } catch (Exception ignored) {
+        }
+        wakeLock = null;
+        try {
+            if (wifiLock != null && wifiLock.isHeld()) wifiLock.release();
+        } catch (Exception ignored) {
+        }
+        wifiLock = null;
+    }
+
+    @Override
+    public void onDestroy() {
+        releaseLocks();
+        super.onDestroy();
     }
 
     private Notification buildNotification(String title, String text) {
@@ -122,6 +182,7 @@ public class CallService extends Service {
     @Override
     public void onTaskRemoved(Intent rootIntent) {
         // Se a pessoa fecha o app pela lista de recentes, encerra a call também.
+        releaseLocks();
         stopForegroundCompat();
         stopSelf();
         super.onTaskRemoved(rootIntent);
